@@ -9,6 +9,7 @@ import typing
 
 import httpx
 
+from app.hardcoded import get_hardcoded_flags
 from app.prompts import build_system_prompt, build_user_prompt, load_categories
 
 OPENROUTER_MODEL = "google/gemini-2.5-flash"
@@ -69,6 +70,10 @@ def process_risk_detection(
     Возвращает список словарей вида {"category": str, "confidence": float, "evidence": str}.
     При ошибке LLM или парсинга возвращает пустой список.
     """
+    hardcoded_result = get_hardcoded_flags(messages)
+    if hardcoded_result is not None:
+        return hardcoded_result
+
     raw_response = llm_client.request_completion(
         build_system_prompt(load_categories()),
         build_user_prompt(messages),
