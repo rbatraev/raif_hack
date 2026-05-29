@@ -11,7 +11,7 @@ import typing
 import httpx
 
 from app.hardcoded import get_hardcoded_flags
-from app.prompts import CONFIDENCE_THRESHOLD, build_system_prompt, build_user_prompt, load_categories
+from app.prompts import CONFIDENCE_THRESHOLD, load_categories
 
 OPENROUTER_MODEL = "google/gemini-2.5-flash"
 _REQUEST_TIMEOUT = 60.0
@@ -285,7 +285,7 @@ def _get_fallback_rule_flags(messages: str) -> list[dict[str, typing.Any]]:
 
 
 def process_risk_detection(
-    llm_client: LLMClient,
+    llm_client: LLMClient,  # noqa: ARG001
     messages: str,
 ) -> tuple[list[dict[str, typing.Any]], str]:
     """Детектирует red flags в тексте диалога.
@@ -305,33 +305,34 @@ def process_risk_detection(
             flag_source="hardcoded",
         ), "hardcoded"
 
-    system_prompt = build_system_prompt(load_categories())
-    user_prompt = build_user_prompt(messages)
-
-    for one_attempt_index in range(_MAX_LLM_ATTEMPTS):
-        temperature = 0.0 if one_attempt_index == 0 else _RETRY_TEMPERATURE
-        raw_response = llm_client.request_completion(
-            system_prompt,
-            user_prompt,
-            json_mode=True,
-            temperature=temperature,
-        )
-        if raw_response is None:
-            continue
-
-        parsed_response = _parse_llm_response(raw_response)
-        if parsed_response is not None:
-            return _build_normalized_flags(
-                parsed_response.get("flags", []),
-                apply_confidence_threshold=True,
-                flag_source="llm",
-            ), "llm"
-
-        _logger.warning(
-            "Failed to parse LLM response attempt=%d raw_response=%.500s",
-            one_attempt_index + 1,
-            raw_response,
-        )
+    # --- LLM temporarily disabled ---
+    # system_prompt = build_system_prompt(load_categories())
+    # user_prompt = build_user_prompt(messages)
+    #
+    # for one_attempt_index in range(_MAX_LLM_ATTEMPTS):
+    #     temperature = 0.0 if one_attempt_index == 0 else _RETRY_TEMPERATURE
+    #     raw_response = llm_client.request_completion(
+    #         system_prompt,
+    #         user_prompt,
+    #         json_mode=True,
+    #         temperature=temperature,
+    #     )
+    #     if raw_response is None:
+    #         continue
+    #
+    #     parsed_response = _parse_llm_response(raw_response)
+    #     if parsed_response is not None:
+    #         return _build_normalized_flags(
+    #             parsed_response.get("flags", []),
+    #             apply_confidence_threshold=True,
+    #             flag_source="llm",
+    #         ), "llm"
+    #
+    #     _logger.warning(
+    #         "Failed to parse LLM response attempt=%d raw_response=%.500s",
+    #         one_attempt_index + 1,
+    #         raw_response,
+    #     )
 
     fallback_flags = _get_fallback_rule_flags(messages)
     if fallback_flags:
@@ -341,7 +342,7 @@ def process_risk_detection(
             flag_source="rules",
         ), "rules"
 
-    return [], "llm"
+    return [], "rules"
 
 
 def load_llm() -> LLMClient:
