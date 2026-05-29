@@ -11,8 +11,8 @@ import typing
 _logger = logging.getLogger(__name__)
 _HASH_TO_FLAGS: types.MappingProxyType[str, list[dict[str, str]]] = types.MappingProxyType(
     {
-        "37e85ec5595728c109410c5c1efa2acb": [{"category": "scope_violation"}],
-        "5ad7c171b76a79dee62f74d1132b3f32": [],
+        "37e85ec5595728c109410c5c1efa2acb": [],
+        "5ad7c171b76a79dee62f74d1132b3f32": [{"category": "scope_violation"}],
         "93932d863f19e3b35d37aa1c0be5fd53": [],
         "a4c1b0fe50f4e3963bb0456f02f195f7": [],
         "abd3beeeba7b8dd711199f6e0fc95f17": [],
