@@ -60,8 +60,11 @@ def process_risk_detection(
     """Демо-заглушка: случайная категория из списка."""
     if not _DEMO_ANSWERS_QUEUE:
         return None
+    result_category = random.choice(_DEMO_ANSWERS_QUEUE)  # noqa: S311
 
-    return {"category": random.choice(_DEMO_ANSWERS_QUEUE)}  # noqa: S311
+    if result_category == "clean":
+        return None
+    return {"category": result_category}
 
 
 def load_llm() -> LLMClient:

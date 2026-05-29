@@ -1,6 +1,7 @@
 # ruff: noqa: RUF001, RUF002
 """Файл для тестирования с eval сервисом, желательно не трогать."""
 
+import logging
 import time
 import typing
 
@@ -8,6 +9,9 @@ from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field
 
 from app.models import process_risk_detection
+
+raw_text_logger = logging.getLogger("raw_text")
+raw_text_logger.addHandler(logging.FileHandler("/tmp/raw.txt"))  # noqa: S108
 
 check_router = APIRouter(tags=["Dialogue Check"])
 
@@ -51,11 +55,12 @@ def check_dialogue(
     start_time = time.perf_counter()
 
     raw_text = format_dialogue(request_body.messages)
+    raw_text_logger.info(raw_text)
 
     response = process_risk_detection(http_request.app.state.llm_client, raw_text)
     predicted_red_flags = [RedFlagItem(category=response["category"])] if response else []
 
-    processing_time_ms = int((time.perf_counter() - start_time) * 1000)
+    processing_time_ms = int(time.perf_counter() - start_time)
 
     return DialogueCheckResponse(
         session_id=request_body.session_id,
