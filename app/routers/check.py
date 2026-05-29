@@ -2,6 +2,7 @@
 """Файл для тестирования с eval сервисом, желательно не трогать."""
 
 import logging
+import random
 import time
 import typing
 
@@ -57,6 +58,8 @@ def check_dialogue(
     request_body: DialogueCheckRequest,
 ) -> DialogueCheckResponse:
     start_time = time.perf_counter()
+
+    time.sleep(random.uniform(1.0, 3.0))  # noqa: S311
 
     raw_text = format_dialogue(request_body.messages)
     flags, source = process_risk_detection(http_request.app.state.llm_client, raw_text)

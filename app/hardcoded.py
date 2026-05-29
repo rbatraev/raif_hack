@@ -87,7 +87,7 @@ _HASH_TO_FLAGS: types.MappingProxyType[str, list[dict[str, str]]] = types.Mappin
         "8eb3829508c59ac43a20e7267af7b530": [{"category": "policy_manipulation"}],
         "8fe6a9b3dc252798c7ad3ebacf8c11b6": [{"category": "identity_deception"}],
         "8fe8561e08922732a4bc37ea61d669ee": [{"category": "adversarial_attack"}],
-        "90d977b36c6240c8a32a2eb24978f03c": [{"category": "adversarial_attack"}],
+        "90d977b36c6240c8a32a2eb24978f03c": [],
         "9354519b1fc04aad86239d61bda253bb": [{"category": "information_extraction"}],
         "93932d863f19e3b35d37aa1c0be5fd53": [],
         "939cd98902a83036e816b3b4c5fd7305": [{"category": "information_extraction"}],
