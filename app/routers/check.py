@@ -8,11 +8,7 @@ import typing
 from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field
 
-from app.models import run_parallel_detection
-
-raw_text_logger = logging.getLogger("raw_text")
-raw_text_logger.setLevel(logging.INFO)
-raw_text_logger.addHandler(logging.FileHandler("/tmp/log.txt"))  # noqa: S108
+from app.models import process_risk_detection
 
 check_router = APIRouter(tags=["Dialogue Check"])
 _logger = logging.getLogger(__name__)
@@ -50,7 +46,7 @@ class DialogueCheckResponse(BaseModel):
 
 
 @check_router.post("/check")
-async def check_dialogue(
+def check_dialogue(
     http_request: Request,
     request_body: DialogueCheckRequest,
 ) -> DialogueCheckResponse:
@@ -63,14 +59,13 @@ async def check_dialogue(
     )
 
     raw_text = format_dialogue(request_body.messages)
-    raw_text_logger.info(raw_text)
-    raw_text_logger.info("=" * 40)
+
     predicted_red_flags = [
         RedFlagItem(category=one_flag["category"])
-        for one_flag in await run_parallel_detection(http_request.app.state.llm_client.api_key, raw_text)
+        for one_flag in process_risk_detection(http_request.app.state.llm_client, raw_text)
     ]
 
-    processing_time_ms = int(time.perf_counter() - start_time)
+    processing_time_ms = int((time.perf_counter() - start_time) * 1000)
 
     _logger.info(
         "response session_id=%s flags=%s time_ms=%d",
