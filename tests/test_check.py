@@ -230,4 +230,4 @@ def test_clean_dialogue_no_flags(client: typing.Any) -> None:
     llm_client_mock = MagicMock(spec=LLMClient)
     llm_client_mock.request_completion.return_value = json_module.dumps({"flags": []})
     response_data = _post_check(client, "s7", "Здравствуйте, хочу узнать свой баланс", llm_client_mock)
-    assert response_data["predicted_red_flags"] is None
+    assert response_data["predicted_red_flags"] == []

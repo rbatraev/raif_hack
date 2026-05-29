@@ -9,9 +9,10 @@ import typing
 
 import httpx
 
-from app.prompts import build_prompt, load_categories
+from app.prompts import build_system_prompt, build_user_prompt, load_categories
 
-OPENROUTER_MODEL = "google/gemini-3.5-flash"
+OPENROUTER_MODEL = "google/gemini-2.5-flash"
+_REQUEST_TIMEOUT = 30.0
 
 _logger = logging.getLogger(__name__)
 
@@ -23,13 +24,22 @@ class LLMClient:
     def __init__(self) -> None:
         self.api_key = os.getenv("OPENROUTER_API_KEY", "")
 
-    def request_completion(self, prompt_text: str, *, json_mode: bool = True) -> str | None:
+    def request_completion(
+        self,
+        system_prompt: str,
+        user_content: str,
+        *,
+        json_mode: bool = True,
+    ) -> str | None:
         if not self.api_key:
             return None
 
         request_payload: dict[str, typing.Any] = {
             "model": OPENROUTER_MODEL,
-            "messages": [{"role": "user", "content": prompt_text}],
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_content},
+            ],
         }
         if json_mode:
             request_payload["response_format"] = {"type": "json_object"}
@@ -42,6 +52,7 @@ class LLMClient:
                     "Content-Type": "application/json",
                 },
                 json=request_payload,
+                timeout=_REQUEST_TIMEOUT,
             )
             return str(response.json()["choices"][0]["message"]["content"])
         except Exception:  # noqa: BLE001
@@ -57,9 +68,11 @@ def process_risk_detection(
     Возвращает список словарей вида {"category": str, "confidence": float, "evidence": str}.
     При ошибке LLM или парсинга возвращает пустой список.
     """
-    prompt_text = build_prompt(load_categories(), messages)
-
-    raw_response = llm_client.request_completion(prompt_text, json_mode=True)
+    raw_response = llm_client.request_completion(
+        build_system_prompt(load_categories()),
+        build_user_prompt(messages),
+        json_mode=True,
+    )
     if raw_response is None:
         return []
 

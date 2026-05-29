@@ -37,8 +37,7 @@ class RedFlagItem(BaseModel):
 @typing.final
 class DialogueCheckResponse(BaseModel):
     session_id: str = Field(description="Идентификатор сессии")
-    predicted_red_flags: list[RedFlagItem] | None = Field(
-        default=None,
+    predicted_red_flags: list[RedFlagItem] = Field(
         description="Список предсказанных нарушений (сравнивается eval-сервисом с expected_red_flags)",
     )
     processing_time_ms: int = Field(description="Время обработки сессии в миллисекундах")
@@ -53,10 +52,12 @@ def check_dialogue(
 
     raw_text = format_dialogue(request_body.messages)
 
-    raw_flags = process_risk_detection(http_request.app.state.llm_client, raw_text)
-    predicted_red_flags = [RedFlagItem(category=one_flag["category"]) for one_flag in raw_flags] if raw_flags else None
+    predicted_red_flags = [
+        RedFlagItem(category=one_flag["category"])
+        for one_flag in process_risk_detection(http_request.app.state.llm_client, raw_text)
+    ]
 
-    processing_time_ms = int((time.perf_counter() - start_time) * 1)
+    processing_time_ms = int((time.perf_counter() - start_time) * 1000)
 
     return DialogueCheckResponse(
         session_id=request_body.session_id,
