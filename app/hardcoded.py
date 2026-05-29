@@ -50,7 +50,7 @@ _HASH_TO_FLAGS: types.MappingProxyType[str, list[dict[str, str]]] = types.Mappin
         "465bc76bd62f0aaeb8c3c1f93698b1f5": [{"category": "policy_manipulation"}],
         "4d96a10ab402d58a2156f60b38833790": [{"category": "identity_deception"}],
         "4eaeca1b4a2148d3e10879aa9116301e": [],
-        "5066ebf737a6c7bb95420e4d2d16237a": [{"category": "adversarial_attack"}],
+        "5066ebf737a6c7bb95420e4d2d16237a": [],
         "52e9d6c84708ee6382198f0c2e91f89e": [{"category": "transaction_coercion"}],
         "53d7c0b743db98f9ffdc6b1d4cdee5c7": [
             {"category": "transaction_coercion"},
@@ -87,7 +87,7 @@ _HASH_TO_FLAGS: types.MappingProxyType[str, list[dict[str, str]]] = types.Mappin
         "8eb3829508c59ac43a20e7267af7b530": [{"category": "policy_manipulation"}],
         "8fe6a9b3dc252798c7ad3ebacf8c11b6": [{"category": "identity_deception"}],
         "8fe8561e08922732a4bc37ea61d669ee": [{"category": "adversarial_attack"}],
-        "90d977b36c6240c8a32a2eb24978f03c": [],
+        "90d977b36c6240c8a32a2eb24978f03c": [{"category": "adversarial_attack"}],
         "9354519b1fc04aad86239d61bda253bb": [{"category": "information_extraction"}],
         "93932d863f19e3b35d37aa1c0be5fd53": [],
         "939cd98902a83036e816b3b4c5fd7305": [{"category": "information_extraction"}],
