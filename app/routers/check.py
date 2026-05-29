@@ -52,10 +52,12 @@ def check_dialogue(
 
     raw_text = format_dialogue(request_body.messages)
 
-    predicted_red_flags = [
-        RedFlagItem(category=one_flag["category"])
-        for one_flag in process_risk_detection(http_request.app.state.llm_client, raw_text)
-    ]
+    raw_flags = process_risk_detection(http_request.app.state.llm_client, raw_text)
+    predicted_red_flags = (
+        [RedFlagItem(category=one_flag["category"]) for one_flag in raw_flags]
+        if raw_flags
+        else [RedFlagItem(category="clean")]
+    )
 
     processing_time_ms = int((time.perf_counter() - start_time) * 1000)
 
