@@ -11,8 +11,8 @@ import httpx
 
 from app.prompts import build_system_prompt, build_user_prompt, load_categories
 
-OPENROUTER_MODEL = "anthropic/claude-sonnet-4.6"
-_REQUEST_TIMEOUT = 30.0
+OPENROUTER_MODEL = "google/gemini-2.5-flash"
+_REQUEST_TIMEOUT = 60.0
 
 _logger = logging.getLogger(__name__)
 
@@ -36,6 +36,7 @@ class LLMClient:
 
         request_payload: dict[str, typing.Any] = {
             "model": OPENROUTER_MODEL,
+            "temperature": 0.0,
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_content},
