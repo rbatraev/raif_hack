@@ -11,7 +11,7 @@ import httpx
 
 from app.prompts import build_prompt, load_categories
 
-OPENROUTER_MODEL = "google/gemini-2.5-flash"
+OPENROUTER_MODEL = "google/gemini-3.5-flash"
 
 _logger = logging.getLogger(__name__)
 
