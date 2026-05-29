@@ -1,6 +1,7 @@
 # ruff: noqa: RUF001, RUF002
 """Файл для тестирования с eval сервисом, желательно не трогать."""
 
+import logging
 import time
 import typing
 
@@ -10,6 +11,7 @@ from pydantic import BaseModel, Field
 from app.models import process_risk_detection
 
 check_router = APIRouter(tags=["Dialogue Check"])
+_logger = logging.getLogger(__name__)
 
 
 @typing.final
@@ -50,6 +52,12 @@ def check_dialogue(
 ) -> DialogueCheckResponse:
     start_time = time.perf_counter()
 
+    _logger.info(
+        "request session_id=%s messages=%d",
+        request_body.session_id,
+        len(request_body.messages),
+    )
+
     raw_text = format_dialogue(request_body.messages)
 
     predicted_red_flags = [
@@ -58,6 +66,13 @@ def check_dialogue(
     ]
 
     processing_time_ms = int((time.perf_counter() - start_time) * 1000)
+
+    _logger.info(
+        "response session_id=%s flags=%s time_ms=%d",
+        request_body.session_id,
+        [one_flag.category for one_flag in predicted_red_flags],
+        processing_time_ms,
+    )
 
     return DialogueCheckResponse(
         session_id=request_body.session_id,
