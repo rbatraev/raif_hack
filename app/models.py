@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import random
 import typing
 
 import httpx
@@ -55,12 +56,10 @@ def process_risk_detection(
     llm_client: LLMClient,  # noqa: ARG001
     messages: str,  # noqa: ARG001
 ) -> dict[str, typing.Any] | None:
-    """Демо-заглушка: первые 5 запросов получают фейковую категорию, дальше None."""
-    try:
-        category = _DEMO_ANSWERS_QUEUE.pop(0)
-    except IndexError:
+    """Демо-заглушка: случайная категория из списка."""
+    if not _DEMO_ANSWERS_QUEUE:
         return None
-    return {"category": category}
+    return {"category": random.choice(_DEMO_ANSWERS_QUEUE)}  # noqa: S311
 
 
 def load_llm() -> LLMClient:
