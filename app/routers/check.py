@@ -56,17 +56,16 @@ def check_dialogue(
     start_time = time.perf_counter()
 
     raw_text = format_dialogue(request_body.messages)
-    predicted_red_flags = [
-        RedFlagItem(category=one_flag["category"])
-        for one_flag in process_risk_detection(http_request.app.state.llm_client, raw_text)
-    ]
+    flags, source = process_risk_detection(http_request.app.state.llm_client, raw_text)
+    predicted_red_flags = [RedFlagItem(category=one_flag["category"]) for one_flag in flags]
 
     processing_time_ms = int(time.perf_counter() - start_time)
 
     raw_text_logger.info(
-        "session=%s flags=%s time_ms=%d\n%s\n%s",
+        "session=%s flags=%s source=%s time_ms=%d\n%s\n%s",
         request_body.session_id,
         [one_flag.category for one_flag in predicted_red_flags],
+        source,
         processing_time_ms,
         raw_text,
         "=" * 40,

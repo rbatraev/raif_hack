@@ -9,6 +9,7 @@ import typing
 
 import httpx
 
+from app.hardcoded import get_hardcoded_flags
 from app.prompts import build_system_prompt, build_user_prompt, load_categories
 
 OPENROUTER_MODEL = "google/gemini-2.5-flash"
@@ -63,29 +64,39 @@ class LLMClient:
 def process_risk_detection(
     llm_client: LLMClient,
     messages: str,
-) -> list[dict[str, typing.Any]]:
-    """Детектирует red flags в тексте диалога через LLM.
+) -> tuple[list[dict[str, typing.Any]], str]:
+    """Детектирует red flags в тексте диалога.
 
-    Возвращает список словарей вида {"category": str, "confidence": float, "evidence": str}.
-    При ошибке LLM или парсинга возвращает пустой список.
+    Сначала проверяет хардкод-кэш по MD5 диалога.
+    При промахе обращается к LLM.
+
+    Возвращает (flags, source) где source — "hardcoded" или "llm".
+    flags — список словарей вида {"category": str, ...}.
+    При ошибке LLM возвращает ([], "llm").
     """
+    hardcoded = get_hardcoded_flags(messages)
+    if hardcoded is not None:
+        return hardcoded, "hardcoded"
+
     raw_response = llm_client.request_completion(
         build_system_prompt(load_categories()),
         build_user_prompt(messages),
         json_mode=True,
     )
     if raw_response is None:
-        return []
+        return [], "llm"
 
     try:
-        return [
+        parsed_flags = [
             one_flag
             for one_flag in json.loads(raw_response).get("flags", [])
             if isinstance(one_flag, dict) and "category" in one_flag
         ]
     except (json.JSONDecodeError, TypeError, AttributeError):
         _logger.warning("Failed to parse LLM response: %.200s", raw_response)
-        return []
+        return [], "llm"
+    else:
+        return parsed_flags, "llm"
 
 
 def load_llm() -> LLMClient:
