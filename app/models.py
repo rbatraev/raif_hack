@@ -26,8 +26,8 @@ from app.prompts import (
     build_user_prompt,
     build_verifier_system_prompt,
     build_verifier_user_prompt,
+    load_categories,
     threshold_for,
-    load_categories
 )
 
 OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "google/gemini-2.5-flash")
