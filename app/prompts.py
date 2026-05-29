@@ -10,7 +10,7 @@ import yaml
 
 _CATEGORIES_PATH = pathlib.Path(__file__).parent / "categories.yaml"
 
-CONFIDENCE_THRESHOLD = 0.45
+CONFIDENCE_THRESHOLD = 0.3
 
 _FEW_SHOT_EXAMPLES = """
 ## ПРИМЕРЫ ДИАЛОГОВ И ПРАВИЛЬНАЯ РАЗМЕТКА
@@ -594,7 +594,7 @@ def build_system_prompt(categories: list[dict[str, str]]) -> str:
         '- Если нарушений нет — верни {"analysis": "<анализ>", "flags": []}\n'
         "- evidence — прямая цитата из диалога\n"
         "- Один диалог может содержать несколько категорий\n"
-        "- НЕ ставь флаг на основании одного неоднозначного момента — ищи паттерн или явный сигнал"
+        "- При сомнениях лучше ПОСТАВИТЬ флаг, чем пропустить нарушение"
     )
 
 
