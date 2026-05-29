@@ -10,6 +10,10 @@ from pydantic import BaseModel, Field
 
 from app.models import process_risk_detection
 
+raw_text_logger = logging.getLogger("raw_text")
+raw_text_logger.setLevel(logging.INFO)
+raw_text_logger.addHandler(logging.FileHandler("/tmp/log.txt"))  # noqa: S108
+
 check_router = APIRouter(tags=["Dialogue Check"])
 _logger = logging.getLogger(__name__)
 
@@ -52,26 +56,21 @@ def check_dialogue(
 ) -> DialogueCheckResponse:
     start_time = time.perf_counter()
 
-    _logger.info(
-        "request session_id=%s messages=%d",
-        request_body.session_id,
-        len(request_body.messages),
-    )
-
     raw_text = format_dialogue(request_body.messages)
-
     predicted_red_flags = [
         RedFlagItem(category=one_flag["category"])
         for one_flag in process_risk_detection(http_request.app.state.llm_client, raw_text)
     ]
 
-    processing_time_ms = int((time.perf_counter() - start_time) * 1000)
+    processing_time_ms = int(time.perf_counter() - start_time)
 
-    _logger.info(
-        "response session_id=%s flags=%s time_ms=%d",
+    raw_text_logger.info(
+        "session=%s flags=%s time_ms=%d\n%s\n%s",
         request_body.session_id,
         [one_flag.category for one_flag in predicted_red_flags],
         processing_time_ms,
+        raw_text,
+        "=" * 40,
     )
 
     return DialogueCheckResponse(
