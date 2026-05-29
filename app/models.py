@@ -78,17 +78,18 @@ def process_risk_detection(
         return []
 
     try:
-        seen_categories: set[str] = set()
-        unique_flags: list[dict[str, typing.Any]] = []
-        for one_flag in json.loads(raw_response).get("flags", []):
-            if isinstance(one_flag, dict) and "category" in one_flag and one_flag["category"] not in seen_categories:
-                seen_categories.add(one_flag["category"])
-                unique_flags.append(one_flag)
+        valid_flags = [
+            one_flag
+            for one_flag in json.loads(raw_response).get("flags", [])
+            if isinstance(one_flag, dict) and "category" in one_flag
+        ]
     except (json.JSONDecodeError, TypeError, AttributeError):
         _logger.warning("Failed to parse LLM response: %.200s", raw_response)
         return []
     else:
-        return unique_flags
+        if not valid_flags:
+            return []
+        return [max(valid_flags, key=lambda one_flag: one_flag.get("confidence", 0.0))]
 
 
 def load_llm() -> LLMClient:
