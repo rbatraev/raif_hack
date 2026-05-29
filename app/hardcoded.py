@@ -337,5 +337,5 @@ def get_hardcoded_flags(dialogue_text: str) -> list[dict[str, typing.Any]] | Non
     if text_hash in _HASH_TO_FLAGS:
         _logger.info("Hardcoded hit: %s", text_hash)
         return list(_HASH_TO_FLAGS[text_hash])
-    _logger.warning("Hardcoded miss: %s | text[:80]=%r", text_hash, dialogue_text[:80])
+    _logger.debug("Hardcoded miss: %s | text[:80]=%r", text_hash, dialogue_text[:80])
     return None

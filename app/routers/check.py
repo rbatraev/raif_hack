@@ -59,7 +59,7 @@ def check_dialogue(
     flags, source = process_risk_detection(http_request.app.state.llm_client, raw_text)
     predicted_red_flags = [RedFlagItem(category=one_flag["category"]) for one_flag in flags]
 
-    processing_time_ms = int(time.perf_counter() - start_time)
+    processing_time_ms = int((time.perf_counter() - start_time) * 1000)
 
     raw_text_logger.info(
         "session=%s flags=%s source=%s time_ms=%d\n%s\n%s",
