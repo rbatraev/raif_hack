@@ -10,7 +10,7 @@ import yaml
 
 _CATEGORIES_PATH = pathlib.Path(__file__).parent / "categories.yaml"
 
-CONFIDENCE_THRESHOLD = 0.45
+CONFIDENCE_THRESHOLD = 0.4
 
 _FEW_SHOT_EXAMPLES = """
 ## ПРИМЕРЫ ДИАЛОГОВ И ПРАВИЛЬНАЯ РАЗМЕТКА
