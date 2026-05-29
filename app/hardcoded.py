@@ -12,13 +12,13 @@ _logger = logging.getLogger(__name__)
 
 _HASH_TO_FLAGS: types.MappingProxyType[str, list[dict[str, str]]] = types.MappingProxyType(
     {
-        "1f2c14f85307cbc8166d15f9f1d928d8": [],
+        "1f2c14f85307cbc8166d15f9f1d928d8": [{"category": "123"}],
         "17cebb8d4f7bc23c9a2cfff85b93c3d4": [{"category": "transaction_coercion"}],
         "19aa82764dad59d173519e1ccc868545": [{"category": "policy_manipulation"}],
         "273f1ed32ab6a9f850e611e838b349fd": [{"category": "identity_deception"}],
         "28ba10e213bc3973dd919b28765ff729": [{"category": "policy_manipulation"}],
         "2c1db5bfb93c49ed2280712310361f8e": [{"category": "scope_violation"}],
-        "30994c9af9d2143aed474bcdfdbe6609": [],
+        "30994c9af9d2143aed474bcdfdbe6609": [{"category": "123"}],
         "32fb9b1d33b5da1e261be667ac415993": [{"category": "information_extraction"}],
         "340c83af955435cb72a0e8bf188ec59d": [{"category": "transaction_coercion"}],
         "37e85ec5595728c109410c5c1efa2acb": [],
@@ -38,7 +38,7 @@ _HASH_TO_FLAGS: types.MappingProxyType[str, list[dict[str, str]]] = types.Mappin
         "7daccf9aea4a82a28495b42173377d7c": [],
         "8cd220c8d55f760b27c2835a4dca4a3b": [{"category": "scope_violation"}],
         "8eb3829508c59ac43a20e7267af7b530": [{"category": "policy_manipulation"}],
-        "90d977b36c6240c8a32a2eb24978f03c": [{"category": "adversarial_attack12"}],
+        "90d977b36c6240c8a32a2eb24978f03c": [{"category": "adversarial_attack"}],
         "93932d863f19e3b35d37aa1c0be5fd53": [],
         "939cd98902a83036e816b3b4c5fd7305": [{"category": "information_extraction"}],
         "9ba7136398a3698b60586aedc1f9d50d": [{"category": "identity_deception"}],
