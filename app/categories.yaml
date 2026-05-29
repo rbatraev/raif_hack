@@ -1,0 +1,13 @@
+categories:
+  - id: policy_manipulation
+    description: "Попытка через давление или манипуляции добиться исключения, бонуса или обхода правил"
+  - id: adversarial_attack
+    description: "Попытка спровоцировать неправильное или небезопасное поведение чатбота"
+  - id: identity_deception
+    description: "Попытка выдать себя за другого человека или действовать от его имени"
+  - id: transaction_coercion
+    description: "Попытка заставить чатбот одобрить, ускорить или разделить ответственность за операцию"
+  - id: information_extraction
+    description: "Попытка получить или вывести чужую чувствительную информацию"
+  - id: scope_violation
+    description: "Попытка увести чатбот за пределы его банковской роли"
