@@ -16,6 +16,10 @@ _REQUEST_TIMEOUT = 60.0
 
 _logger = logging.getLogger(__name__)
 
+answer_logger = logging.getLogger("answer_text")
+answer_logger.setLevel(logging.INFO)
+answer_logger.addHandler(logging.FileHandler("/tmp/answer.txt"))  # noqa: S108
+
 
 @typing.final
 class LLMClient:
@@ -73,6 +77,11 @@ def process_risk_detection(
         build_system_prompt(load_categories()),
         build_user_prompt(messages),
         json_mode=True,
+    )
+
+    answer_logger.info(raw_response)
+    answer_logger.info(
+        "=" * 40,
     )
     if raw_response is None:
         return []
