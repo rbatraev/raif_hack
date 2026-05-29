@@ -64,7 +64,7 @@ def check_dialogue(
 
     raw_text = format_dialogue(request_body.messages)
     raw_text_logger.info(raw_text)
-
+    raw_text_logger.info("=" * 40)
     predicted_red_flags = [
         RedFlagItem(category=one_flag["category"])
         for one_flag in process_risk_detection(http_request.app.state.llm_client, raw_text)

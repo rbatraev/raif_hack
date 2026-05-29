@@ -11,7 +11,7 @@ import httpx
 
 from app.prompts import build_system_prompt, build_user_prompt, load_categories
 
-OPENROUTER_MODEL = "google/gemini-3.5-flash"
+OPENROUTER_MODEL = "google/claude-sonnet-4.6"
 _REQUEST_TIMEOUT = 30.0
 
 _logger = logging.getLogger(__name__)
