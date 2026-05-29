@@ -73,3 +73,28 @@ def test_check_validation_invalid_message_shape(client) -> None:
         json={"session_id": "x", "messages": [{"role": "user"}]},
     )
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
+
+# --- prompts tests ---
+
+from app.prompts import load_categories, build_prompt  # noqa: E402
+
+
+def test_load_categories_returns_six() -> None:
+    cats = load_categories()
+    assert len(cats) == 6
+    ids = [c["id"] for c in cats]
+    assert "policy_manipulation" in ids
+    assert "adversarial_attack" in ids
+    assert "identity_deception" in ids
+    assert "transaction_coercion" in ids
+    assert "information_extraction" in ids
+    assert "scope_violation" in ids
+
+
+def test_build_prompt_contains_category_ids() -> None:
+    cats = load_categories()
+    prompt = build_prompt(cats, "user: привет")
+    for cat in cats:
+        assert cat["id"] in prompt
+    assert "user: привет" in prompt

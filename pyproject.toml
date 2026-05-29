@@ -65,6 +65,10 @@ pretty = true
 module = ["torch.*", "transformers.*"]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = ["yaml"]
+ignore_missing_imports = true
+
 [tool.flake8]
 max-line-length = 120
 select = ["COP"]
