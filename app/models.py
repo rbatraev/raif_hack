@@ -49,6 +49,7 @@ _DEMO_ANSWERS_QUEUE: list[str] = [
     "identity_deception",
     "identity_deception",
     "adversarial_attack",
+    "clear",
 ]
 
 
