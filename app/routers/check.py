@@ -37,6 +37,9 @@ class DialogueCheckRequest(BaseModel):
 @typing.final
 class RedFlagItem(BaseModel):
     category: str = Field(description="Категория обнаруженного риска")
+    confidence: float = Field(default=1.0, description="Уверенность детектора в категории")
+    correct_probability: float = Field(default=1.0, description="Оценка вероятности правильности ответа")
+    is_obvious: bool = Field(default=True, description="Явно правильный флаг по текущему порогу уверенности")
 
 
 @typing.final
@@ -57,14 +60,29 @@ def check_dialogue(
 
     raw_text = format_dialogue(request_body.messages)
     flags, source = process_risk_detection(http_request.app.state.llm_client, raw_text)
-    predicted_red_flags = [RedFlagItem(category=one_flag["category"]) for one_flag in flags]
+    predicted_red_flags = [
+        RedFlagItem(
+            category=one_flag["category"],
+            confidence=float(one_flag.get("confidence", 1.0)),
+            correct_probability=float(one_flag.get("correct_probability", one_flag.get("confidence", 1.0))),
+            is_obvious=bool(one_flag.get("is_obvious", True)),
+        )
+        for one_flag in flags
+    ]
 
     processing_time_ms = int((time.perf_counter() - start_time) * 1000)
 
     raw_text_logger.info(
         "session=%s flags=%s source=%s time_ms=%d\n%s\n%s",
         request_body.session_id,
-        [one_flag.category for one_flag in predicted_red_flags],
+        [
+            {
+                "category": one_flag.category,
+                "correct_probability": one_flag.correct_probability,
+                "is_obvious": one_flag.is_obvious,
+            }
+            for one_flag in predicted_red_flags
+        ],
         source,
         processing_time_ms,
         raw_text,

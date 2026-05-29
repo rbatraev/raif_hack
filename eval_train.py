@@ -15,6 +15,13 @@ from app.routers.check import DialogueMessage, format_dialogue
 EvalResult = dict[str, typing.Any]
 
 
+def format_flag_debug(one_flag: dict[str, typing.Any]) -> str:
+    category = str(one_flag.get("category", "unknown"))
+    correct_probability = float(one_flag.get("correct_probability", one_flag.get("confidence", 0.0)))
+    obvious_marker = "obvious" if bool(one_flag.get("is_obvious", False)) else "check"
+    return f"{category}:{correct_probability:.2f}:{obvious_marker}"
+
+
 def main() -> None:
     with Path("train.json").open(encoding="utf-8") as f:
         data = json.load(f)
@@ -39,6 +46,7 @@ def main() -> None:
         total_time += elapsed
 
         predicted = {f["category"] for f in detected_flags}
+        predicted_debug = [format_flag_debug(one_flag) for one_flag in detected_flags]
 
         tp = expected & predicted
         fp = predicted - expected
@@ -53,6 +61,7 @@ def main() -> None:
                 "session_id": session_id,
                 "expected": sorted(expected),
                 "predicted": sorted(predicted),
+                "predicted_debug": predicted_debug,
                 "tp": sorted(tp),
                 "fp": sorted(fp),
                 "fn": sorted(fn),
@@ -66,7 +75,7 @@ def main() -> None:
         icon = "OK" if status == "OK" else "ERR"
         print(
             f"[{i + 1:2d}/{len(data)}] {icon} {session_id}  expected={sorted(expected)}  "
-            f"predicted={sorted(predicted)}  {f'FP={sorted(fp)}' if fp else ''}  "
+            f"predicted={predicted_debug}  {f'FP={sorted(fp)}' if fp else ''}  "
             f"{f'FN={sorted(fn)}' if fn else ''}  source={source}  ({int(elapsed * 1000)}ms)"
         )
 
@@ -131,13 +140,13 @@ def main() -> None:
     if clean_errors:
         print(f"\n{len(clean_errors)} clean-dialogue false positives:")
         for r in clean_errors:
-            print(f"  {r['session_id']}  predicted={r['predicted']}")
+            print(f"  {r['session_id']}  predicted={r['predicted_debug']}")
 
     missed_flagged = [r for r in results if r["expected"] and r["fn"]]
     if missed_flagged:
         print(f"\n{len(missed_flagged)} flagged-dialogue misses:")
         for r in missed_flagged:
-            print(f"  {r['session_id']}  expected={r['expected']}  predicted={r['predicted']}  FN={r['fn']}")
+            print(f"  {r['session_id']}  expected={r['expected']}  predicted={r['predicted_debug']}  FN={r['fn']}")
 
     # Show errors
     errors = [r for r in results if r["status"] != "OK"]
@@ -145,7 +154,8 @@ def main() -> None:
         print(f"\n{len(errors)} errors:")
         for r in errors:
             print(
-                f"  {r['session_id']}  expected={r['expected']}  predicted={r['predicted']}  FP={r['fp']}  FN={r['fn']}"
+                f"  {r['session_id']}  expected={r['expected']}  "
+                f"predicted={r['predicted_debug']}  FP={r['fp']}  FN={r['fn']}"
             )
 
 
