@@ -14,15 +14,10 @@ import httpx
 
 from app.prompts import build_system_prompt, build_user_prompt, load_categories
 
-OPENROUTER_MODEL = "google/gemini-2.5-flash"
+OPENROUTER_MODEL = "google/gemini-3.5-flash"
 _REQUEST_TIMEOUT = 3.0
 _HIGH_CONFIDENCE_THRESHOLD = 0.85
-_PARALLEL_MODELS = [
-    "google/gemini-2.5-flash",
-    "openai/gpt-4o-mini",
-    "anthropic/claude-haiku-4-5-20251001",
-    "google/gemini-3.5-flash",
-]
+_PARALLEL_MODELS = ["openai/gpt-5.4-mini", "anthropic/claude-haiku-4.5", "google/gemini-3.5-flash"]
 
 _logger = logging.getLogger(__name__)
 
