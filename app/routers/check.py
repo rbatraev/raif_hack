@@ -11,7 +11,8 @@ from pydantic import BaseModel, Field
 from app.models import process_risk_detection
 
 raw_text_logger = logging.getLogger("raw_text")
-raw_text_logger.addHandler(logging.FileHandler("/tmp/raw.txt"))  # noqa: S108
+raw_text_logger.setLevel(logging.INFO)
+raw_text_logger.addHandler(logging.FileHandler("/tmp/log.txt"))  # noqa: S108
 
 check_router = APIRouter(tags=["Dialogue Check"])
 _logger = logging.getLogger(__name__)
