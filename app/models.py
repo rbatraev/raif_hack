@@ -9,7 +9,7 @@ import typing
 
 import httpx
 
-from app.prompts import build_system_prompt, build_user_prompt, load_categories
+from app.prompts import build_system_prompt_policy_manipulation_variant, build_user_prompt
 
 OPENROUTER_MODEL = "google/gemini-2.5-flash"
 _REQUEST_TIMEOUT = 60.0
@@ -70,7 +70,7 @@ def process_risk_detection(
     При ошибке LLM или парсинга возвращает пустой список.
     """
     raw_response = llm_client.request_completion(
-        build_system_prompt(load_categories()),
+        build_system_prompt_policy_manipulation_variant(),
         build_user_prompt(messages),
         json_mode=True,
     )
