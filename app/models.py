@@ -44,12 +44,12 @@ class LLMClient:
 
 
 _DEMO_ANSWERS_QUEUE: list[str] = [
+    "policy_manipulation",
     "identity_deception",
-    "identity_deception",
-    "identity_deception",
-    "identity_deception",
+    "transaction_coercion",
+    "information_extraction",
     "adversarial_attack",
-    "clear",
+    "clean",
 ]
 
 
@@ -60,6 +60,7 @@ def process_risk_detection(
     """Демо-заглушка: случайная категория из списка."""
     if not _DEMO_ANSWERS_QUEUE:
         return None
+
     return {"category": random.choice(_DEMO_ANSWERS_QUEUE)}  # noqa: S311
 
 
