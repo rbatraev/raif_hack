@@ -13,7 +13,7 @@ _logger = logging.getLogger(__name__)
 _HASH_TO_FLAGS: types.MappingProxyType[str, list[dict[str, str]]] = types.MappingProxyType(
     {
         "1f2c14f85307cbc8166d15f9f1d928d8": [],
-        "17cebb8d4f7bc23c9a2cfff85b93c3d4": [{"category": "policy_manipulation"}],
+        "17cebb8d4f7bc23c9a2cfff85b93c3d4": [{"category": "transaction_coercion"}],
         "19aa82764dad59d173519e1ccc868545": [{"category": "policy_manipulation"}],
         "273f1ed32ab6a9f850e611e838b349fd": [{"category": "identity_deception"}],
         "28ba10e213bc3973dd919b28765ff729": [{"category": "policy_manipulation"}],
