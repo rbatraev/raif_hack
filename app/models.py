@@ -12,7 +12,7 @@ import httpx
 from app.hardcoded import get_hardcoded_flags
 from app.prompts import build_system_prompt, build_user_prompt, load_categories
 
-OPENROUTER_MODEL = "google/gemini-2.5-flash"
+OPENROUTER_MODEL = "anthropic/claude-opus-4.8-fast"
 _REQUEST_TIMEOUT = 60.0
 
 _logger = logging.getLogger(__name__)
