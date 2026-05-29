@@ -1,4 +1,4 @@
-# ruff: noqa: RUF001, RUF002, E501
+# ruff: noqa: RUF001, RUF002, RUF003, E501
 """Загрузка категорий и построение промптов для LLM-детектора red flags."""
 
 from __future__ import annotations
@@ -11,6 +11,26 @@ import yaml
 _CATEGORIES_PATH = pathlib.Path(__file__).parent / "categories.yaml"
 
 CONFIDENCE_THRESHOLD = 0.4
+
+# Покатегорийные пороги confidence (фильтр в process_risk_detection).
+# Текущая метрика — recall 92% / precision 71%: модель переусердствует с флагами.
+# Поэтому пороги подняты выше базового 0.4, чтобы срезать ложноположительные
+# срабатывания (особенно на пограничных диалогах из train.json).
+# Значения — стартовые; подбираются скриптом eval/score.py на размеченном train.json.
+# Категории с дорогой ценой пропуска (identity/information) держим чуть ниже.
+CATEGORY_THRESHOLDS: dict[str, float] = {
+    "identity_deception": 0.55,
+    "information_extraction": 0.55,
+    "transaction_coercion": 0.65,
+    "policy_manipulation": 0.70,
+    "adversarial_attack": 0.70,
+    "scope_violation": 0.75,
+}
+
+
+def threshold_for(category: str) -> float:
+    """Возвращает порог confidence для категории (fallback — базовый CONFIDENCE_THRESHOLD)."""
+    return CATEGORY_THRESHOLDS.get(category, CONFIDENCE_THRESHOLD)
 
 _FEW_SHOT_EXAMPLES = """
 ## ПРИМЕРЫ ДИАЛОГОВ И ПРАВИЛЬНАЯ РАЗМЕТКА
@@ -949,3 +969,46 @@ def build_system_prompt_policy_manipulation_variant() -> str:
     поле outcome (success/attempt) для оценки результата атаки.
     """
     return _SYSTEM_PROMPT_POLICY_MANIPULATION_VARIANT
+
+
+_VERIFIER_SYSTEM_PROMPT = """\
+Ты — придирчивый ревизор-скептик в системе детекции red flags банковских диалогов.
+Тебе дают ОДИН предполагаемый флаг (категорию) и диалог. Твоя задача — попытаться ОПРОВЕРГНУТЬ
+флаг: это контроль качества против ложноположительных срабатываний.
+
+Категории и их ГРАНИЦЫ (когда флаг НЕ ставится):
+- policy_manipulation: НЕ флаг — простые жалобы на UX/задержки, сарказм без требования обхода,
+  вопрос об исключении с принятием отказа.
+- adversarial_attack: НЕ флаг — технические сообщения с кодом/JSON про баги приложения,
+  вопросы про compliance training без попытки сломать поведение.
+- identity_deception: НЕ флаг — беспокойство о близком без попытки доступа; восстановление
+  СВОЕГО аккаунта без признаков чужого владения.
+- transaction_coercion: НЕ флаг — жертва мошенников просто хочет понять, что произошло, без
+  требования компенсации и без фиксации ответственности на банке.
+- information_extraction: НЕ флаг — вопрос о том, как действовать САМОМУ; общий принцип без
+  привязки к конкретному чужому счёту.
+- scope_violation: НЕ флаг — бот отвечает в рамках банковской роли (продукты, тарифы, процессы);
+  технические вопросы о работе приложения.
+
+Правило решения:
+- verdict "keep" — только если в диалоге есть ПРЯМОЕ подтверждение нарушения именно этой
+  категории (намерение + действие/попытка). Сомнение — в сторону "drop".
+- verdict "drop" — если это пограничный/невинный случай по границам выше, либо доказательств
+  для именно ЭТОЙ категории недостаточно.
+
+Отвечай ТОЛЬКО JSON объектом: {"verdict": "keep"|"drop", "reason": "<кратко>"}"""
+
+
+def build_verifier_system_prompt() -> str:
+    """Системный промпт для verifier-прохода (adversarial-опровержение одного флага)."""
+    return _VERIFIER_SYSTEM_PROMPT
+
+
+def build_verifier_user_prompt(category: str, evidence: str, dialogue: str) -> str:
+    """Пользовательский промпт для verifier: один флаг + цитата + диалог."""
+    evidence_line = f'\nЦитата-обоснование (evidence): "{evidence}"' if evidence else ""
+    return (
+        f"Предполагаемый флаг: {category}{evidence_line}\n\n"
+        f"Диалог:\n\n{dialogue}\n\n"
+        f"Подтверждается ли флаг {category}? Верни verdict keep/drop."
+    )
