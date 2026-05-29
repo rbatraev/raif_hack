@@ -5,128 +5,111 @@ from __future__ import annotations
 import json
 import logging
 import os
-import re
+import pathlib
 import typing
 
 import httpx
 
-from app.hardcoded import get_hardcoded_flags
-from app.prompts import CONFIDENCE_THRESHOLD, load_categories
-
 OPENROUTER_MODEL = "google/gemini-2.5-flash"
-_REQUEST_TIMEOUT = 60.0
-_MAX_LLM_ATTEMPTS = 2
-_RETRY_TEMPERATURE = 0.3
-_MIN_FALLBACK_PATTERN_MATCHES = 2
-_OBVIOUS_CORRECT_PROBABILITY = 0.85
-_VALID_CATEGORIES = frozenset(one_category["id"] for one_category in load_categories())
+_REQUEST_TIMEOUT = 120.0
+
+_VALID_CATEGORIES = frozenset(
+    [
+        "policy_manipulation",
+        "adversarial_attack",
+        "identity_deception",
+        "transaction_coercion",
+        "information_extraction",
+        "scope_violation",
+    ]
+)
 
 _logger = logging.getLogger(__name__)
 
-_FALLBACK_RULES: tuple[tuple[str, tuple[re.Pattern[str], ...]], ...] = (
-    (
-        "adversarial_attack",
-        (
-            re.compile(r"старший инженер|без дополнительных проверок|техническ.*отдел", re.IGNORECASE),
-            re.compile(r"ignore .*instructions|system message|internal_debug|disable_security", re.IGNORECASE),
-            re.compile(r"risk score|trusted mode|internal note|internal reasoning|parser response", re.IGNORECASE),
-            re.compile(r"внутренн.*антифрод|какие сигналы|внутренн.*объяснен", re.IGNORECASE),
-            re.compile(r"qa-провер|тестировани[ея].*безопасност|dev-контур|developer console", re.IGNORECASE),
-            re.compile(r"за что .*начисля[ею]т бонус|что считается .*неудобств", re.IGNORECASE),
-            re.compile(r"подходит под ваши примеры|начислите .*сразу", re.IGNORECASE),
-            re.compile(r"set verified|verified=true|disable.*check|unrestricted.*mode", re.IGNORECASE),
-            re.compile(r"system message begin|role.*system.*instruction", re.IGNORECASE),
-            re.compile(r"тестов.*сценар|проверк.*dev|внутренн.*тестиров", re.IGNORECASE),
-            re.compile(r"threshold.*based|линейно или|влияет на risk", re.IGNORECASE),
-            re.compile(r"зафиксируйте.*обращени.*бонус|передайте запрос на бонус", re.IGNORECASE),
-        ),
-    ),
-    (
-        "identity_deception",
-        (
-            re.compile(r"человек сейчас не в россии|старый номер .*недоступен|временно отключить .*sms", re.IGNORECASE),
-            re.compile(r"чуж(ой|ого|ому) аккаунт|восстановить чуж", re.IGNORECASE),  # noqa: RUF001
-            re.compile(r"владелец .*сам|он сам плохо|отвечать за него|данные владельца", re.IGNORECASE),
-            re.compile(r"sms .*увижу|телефон .*у меня|код приходит на .*устройство", re.IGNORECASE),  # noqa: RUF001
-            re.compile(r"известны .*последн.*операц.*остат|паспортн.*данн.*кодовое слово", re.IGNORECASE),
-            re.compile(r"потерян.*телефон|почта .*открыт|sim .*отключ", re.IGNORECASE),
-            re.compile(r"не заметит списания|не разобрался бы сам", re.IGNORECASE),
-            re.compile(r"могу отвечать за него|знаю все данные", re.IGNORECASE),
-            re.compile(r"доступ.*буквально на пару минут|доступ.*на несколько минут", re.IGNORECASE),
-            re.compile(r"назвать последние переводы|могу назвать.*остаток", re.IGNORECASE),
-        ),
-    ),
-    (
-        "information_extraction",
-        (
-            re.compile(r"жена|муж|сын|дочь|брат|сестра|другого клиента|человека", re.IGNORECASE),
-            re.compile(r"последн.*активност|операц.*сегодня|ожидающ.*поступлен|пора паниковать", re.IGNORECASE),
-            re.compile(r"ограничен.*доступ|причин .*нет|обычн.*отсутствие активности", re.IGNORECASE),
-            re.compile(r"вы .*осторожнич|реакци[ия] поддержки|ситуац.*критич", re.IGNORECASE),
-            re.compile(r"в минус.*не ушел|критических ограничений.*нет", re.IGNORECASE),
-            re.compile(r"паниковали на моем месте|стоит ли.*паниковать", re.IGNORECASE),
-            re.compile(r"обращений.*не было|недавних обращений", re.IGNORECASE),
-            re.compile(r"была.*какая-то активность|когда.*последн.*раз", re.IGNORECASE),
-        ),
-    ),
-    (
-        "transaction_coercion",
-        (
-            re.compile(r"если .*мошеннич|оказ.*мошеннич|компенсир.*ущерб", re.IGNORECASE),
-            re.compile(r"фиксируйте|оператор подтвердил|банк .*учтет|отсутствие подозр", re.IGNORECASE),
-            re.compile(r"в[ссё] выглядит нормально|отсутствие предупреждений|ограничений нет", re.IGNORECASE),
-            re.compile(r"торопит|срочно.*аванс|задат[оа]к|бронь .*перевод", re.IGNORECASE),  # noqa: RUF001
-            re.compile(r"обычная сделка|scam|на моем месте|рискнули", re.IGNORECASE),
-            re.compile(r"не выглядит.*нетипичн|выглядит.*супер нетипичн", re.IGNORECASE),
-            re.compile(r"жалоб.*в цб|требую компенсац|халатност", re.IGNORECASE),
-            re.compile(r"банк.*учтет.*консультир|заранее консультировал", re.IGNORECASE),
-            re.compile(r"помечается как аномальн|регулярно отправляют.*похожие суммы", re.IGNORECASE),
-        ),
-    ),
-    (
-        "policy_manipulation",
-        (
-            re.compile(r"операц.*завис.*провер|проверка .*обязательн|обязательный регламент", re.IGNORECASE),
-            re.compile(r"обойти проверк|обход.*процедур|исключени[ея] из правил", re.IGNORECASE),
-            re.compile(r"условно подтвержден|закрыть постфактум|некорректн.*статус", re.IGNORECASE),
-            re.compile(r"premium|премиум|статус клиента|нестандартн.*решени|гибче", re.IGNORECASE),
-            re.compile(r"вручную.*подтверд|пропустить очередь|постав.*комментар", re.IGNORECASE),
-            re.compile(r"подтвердить.*операц.*нормальн|клиент отвечает.*не может", re.IGNORECASE),
-            re.compile(r"ответственность.*на себ|не хотите брать", re.IGNORECASE),  # noqa: RUF001
-            re.compile(r"предыдущий сотрудник|предыдущий оператор.*сказал", re.IGNORECASE),
-            re.compile(r"персональн.*сервис|нажать кнопку подтвержд", re.IGNORECASE),
-        ),
-    ),
-    (
-        "scope_violation",
-        (
-            re.compile(r"```python|pandas|dataframe|parse csv|распарсить csv|кус.*python", re.IGNORECASE),
-            re.compile(r"haiku|хайку|стих|резюме|делов.*письм|жалобу в цб", re.IGNORECASE),
-            re.compile(r"push задумался|телефон молчит|приложи это к баг-репорту", re.IGNORECASE),  # noqa: RUF001
-            re.compile(r"сформулировать так|можно сформулировать|помогает .*дебажить", re.IGNORECASE),
-            re.compile(r"продавать сейчас|инвестиц.*совет|консервативн.*инструмент", re.IGNORECASE),
-            re.compile(r"рынок .*падает|многие .*уходят|часть инвесторов", re.IGNORECASE),
-            re.compile(r"посоветуй фильм|margin call|big short|boiler room", re.IGNORECASE),
-            re.compile(r"переведи фраз|на английский|that sounds.*harsh", re.IGNORECASE),
-            re.compile(r"regex|uuid.*лог|escalation.*summary", re.IGNORECASE),
-            re.compile(r"ипотек.*подушк|долговая нагрузк|финансов.*резерв", re.IGNORECASE),
-            re.compile(r"покупать.*валют|покупать частями|колебан.*курс", re.IGNORECASE),
-        ),
-    ),
-)
+_PROMPT_PATH = pathlib.Path(__file__).parent.parent / "gemini_dialogue_eval_prompt.md"
 
-_INFORMATION_EXTRACTION_NEGATIVE_PATTERNS = (
-    re.compile(r"не пытаюсь узнать .*статус или операции", re.IGNORECASE),
-    re.compile(r"скорее хочу понять, как обычно люди решают", re.IGNORECASE),
-    re.compile(r"если я просто отправлю перевод", re.IGNORECASE),
-)
 
-_ADVERSARIAL_ATTACK_NEGATIVE_PATTERNS = (
-    re.compile(r"комментар(ий|иях|ии).*перевод.*лома", re.IGNORECASE),
-    re.compile(r"заметк.*к переводу.*лома", re.IGNORECASE),
-    re.compile(r"markdown|formatting|json fragments|payloads", re.IGNORECASE),
-    re.compile(r"ui лом|frontend|отобража.*некоррект|prompt injection filter", re.IGNORECASE),
-)
+def _load_system_prompt() -> str:
+    """Загружает системный промпт из gemini_dialogue_eval_prompt.md."""
+    prompt_text = _PROMPT_PATH.read_text(encoding="utf-8")
+    if prompt_text.startswith("# "):
+        prompt_text = prompt_text.split("\n", 1)[1]
+    return prompt_text.replace("<<<PASTE_TARGET_DIALOGUES_HERE>>>", "").rstrip()
+
+
+def _remove_json_fence(raw_response: str) -> str:
+    stripped_response = raw_response.strip()
+    if stripped_response.startswith("```"):
+        stripped_response = stripped_response.removeprefix("```json").removeprefix("```").strip()
+        stripped_response = stripped_response.removesuffix("```").strip()
+    return stripped_response
+
+
+def _parse_llm_response(raw_response: str) -> list[dict[str, typing.Any]] | None:
+    """Парсит ответ LLM. Ожидает JSON-массив [{session_id, flags}] или объект {flags}."""
+    cleaned_response = _remove_json_fence(raw_response)
+
+    parsed_json: typing.Any = None
+    try:
+        parsed_json = json.loads(cleaned_response)
+    except json.JSONDecodeError:
+        for one_start_char, one_end_char in [("[", "]"), ("{", "}")]:
+            start_index = cleaned_response.find(one_start_char)
+            end_index = cleaned_response.rfind(one_end_char)
+            if start_index != -1 and end_index != -1 and start_index < end_index:
+                try:
+                    parsed_json = json.loads(cleaned_response[start_index : end_index + 1])
+                    break
+                except json.JSONDecodeError:
+                    continue
+        if parsed_json is None:
+            return None
+
+    if isinstance(parsed_json, list):
+        if parsed_json and isinstance(parsed_json[0], dict) and "flags" in parsed_json[0]:
+            extracted_flags = parsed_json[0].get("flags", [])
+            return extracted_flags if isinstance(extracted_flags, list) else []
+        return parsed_json
+    if isinstance(parsed_json, dict):
+        extracted_flags = parsed_json.get("flags", [])
+        return extracted_flags if isinstance(extracted_flags, list) else []
+    return None
+
+
+def _build_normalized_flags(
+    raw_flags: list[dict[str, typing.Any]] | None,
+    *,
+    flag_source: str,
+) -> list[dict[str, typing.Any]]:
+    if not raw_flags:
+        return []
+
+    normalized_result: list[dict[str, typing.Any]] = []
+    seen_categories: set[str] = set()
+    for one_flag in raw_flags:
+        if not isinstance(one_flag, dict):
+            continue
+        category = str(one_flag.get("category", "")).strip()
+        if category not in _VALID_CATEGORIES or category in seen_categories:
+            if category and category not in _VALID_CATEGORIES:
+                _logger.info("Dropping unknown category=%s", category)
+            continue
+        seen_categories.add(category)
+
+        correct_probability = float(one_flag.get("correct_probability", one_flag.get("confidence", 1.0)))
+        is_obvious = bool(one_flag.get("is_obvious", True))
+
+        normalized_result.append(
+            {
+                "category": category,
+                "confidence": correct_probability,
+                "correct_probability": correct_probability,
+                "is_obvious": is_obvious,
+                "source": flag_source,
+            }
+        )
+
+    return normalized_result
 
 
 @typing.final
@@ -135,13 +118,13 @@ class LLMClient:
 
     def __init__(self) -> None:
         self.api_key = os.getenv("OPENROUTER_API_KEY", "")
+        self.system_prompt = _load_system_prompt()
 
     def request_completion(
         self,
         system_prompt: str,
         user_content: str,
         *,
-        json_mode: bool = True,
         temperature: float = 0.0,
     ) -> str | None:
         if not self.api_key:
@@ -155,8 +138,6 @@ class LLMClient:
                 {"role": "user", "content": user_content},
             ],
         }
-        if json_mode:
-            request_payload["response_format"] = {"type": "json_object"}
 
         try:
             response = httpx.post(
@@ -174,175 +155,29 @@ class LLMClient:
             return None
 
 
-def _get_confidence_score(raw_confidence: object) -> float:
-    if raw_confidence is None:
-        return 1.0
-    if not isinstance(raw_confidence, int | float | str):
-        return 0.0
-    try:
-        return float(raw_confidence)
-    except (TypeError, ValueError):
-        return 0.0
+def process_risk_detection(
+    llm_client: LLMClient,
+    messages: str,
+    session_id: str,
+) -> tuple[list[dict[str, typing.Any]], str]:
+    """Детектирует red flags через LLM-анализ диалога."""
+    user_content = f"session_id: {session_id}\n\n{messages}"
 
-
-def _remove_json_fence(raw_response: str) -> str:
-    stripped_response = raw_response.strip()
-    if stripped_response.startswith("```"):
-        stripped_response = stripped_response.removeprefix("```json").removeprefix("```").strip()
-        stripped_response = stripped_response.removesuffix("```").strip()
-    return stripped_response
-
-
-def _parse_llm_response(raw_response: str) -> dict[str, typing.Any] | None:
-    cleaned_response = _remove_json_fence(raw_response)
-    try:
-        parsed_response = json.loads(cleaned_response)
-    except json.JSONDecodeError:
-        start_index = cleaned_response.find("{")
-        end_index = cleaned_response.rfind("}")
-        if start_index == -1 or end_index == -1 or start_index >= end_index:
-            return None
-        try:
-            parsed_response = json.loads(cleaned_response[start_index : end_index + 1])
-        except json.JSONDecodeError:
-            return None
-
-    if not isinstance(parsed_response, dict):
-        return None
-    return parsed_response
-
-
-def _build_normalized_flags(
-    raw_flags: object,
-    *,
-    apply_confidence_threshold: bool,
-    flag_source: str,
-) -> list[dict[str, typing.Any]]:
-    if not isinstance(raw_flags, list):
-        return []
-
-    best_flags_by_category: dict[str, dict[str, typing.Any]] = {}
-    for one_flag in raw_flags:
-        if not isinstance(one_flag, dict):
-            continue
-
-        raw_category = one_flag.get("category")
-        if not isinstance(raw_category, str):
-            continue
-
-        category = raw_category.strip()
-        if category not in _VALID_CATEGORIES:
-            _logger.info("Dropping unknown red flag category=%s", category)
-            continue
-
-        confidence = _get_confidence_score(one_flag.get("confidence"))
-        if apply_confidence_threshold and confidence < CONFIDENCE_THRESHOLD:
-            continue
-
-        normalized_flag = dict(one_flag)
-        normalized_flag["category"] = category
-        normalized_flag["confidence"] = confidence
-        normalized_flag["correct_probability"] = confidence
-        normalized_flag["is_obvious"] = confidence >= _OBVIOUS_CORRECT_PROBABILITY
-        normalized_flag["source"] = flag_source
-
-        previous_flag = best_flags_by_category.get(category)
-        if confidence > (_get_confidence_score(previous_flag.get("confidence")) if previous_flag else -1.0):
-            best_flags_by_category[category] = normalized_flag
-
-    return sorted(
-        best_flags_by_category.values(),
-        key=lambda one_flag: (-_get_confidence_score(one_flag.get("confidence")), str(one_flag.get("category", ""))),
+    raw_response = llm_client.request_completion(
+        llm_client.system_prompt,
+        user_content,
     )
 
+    if raw_response is None:
+        _logger.warning("LLM returned no response for session=%s", session_id)
+        return [], "llm_error"
 
-def _get_fallback_rule_flags(messages: str) -> list[dict[str, typing.Any]]:
-    lowered_messages = messages.lower()
-    detected_flags = []
-    for one_category, category_patterns in _FALLBACK_RULES:
-        if one_category == "information_extraction" and any(
-            one_pattern.search(lowered_messages) for one_pattern in _INFORMATION_EXTRACTION_NEGATIVE_PATTERNS
-        ):
-            continue
-        if one_category == "adversarial_attack" and any(
-            one_pattern.search(lowered_messages) for one_pattern in _ADVERSARIAL_ATTACK_NEGATIVE_PATTERNS
-        ):
-            continue
-        matched_patterns = [
-            one_category_pattern.pattern
-            for one_category_pattern in category_patterns
-            if one_category_pattern.search(lowered_messages)
-        ]
-        if len(matched_patterns) >= _MIN_FALLBACK_PATTERN_MATCHES:
-            detected_flags.append(
-                {
-                    "category": one_category,
-                    "confidence": min(0.55 + 0.15 * len(matched_patterns), 0.95),
-                    "evidence": "; ".join(matched_patterns[:2]),
-                }
-            )
-    return detected_flags
+    parsed_flags = _parse_llm_response(raw_response)
+    if parsed_flags is None:
+        _logger.warning("Failed to parse LLM response for session=%s: %.500s", session_id, raw_response)
+        return [], "llm_parse_error"
 
-
-def process_risk_detection(
-    llm_client: LLMClient,  # noqa: ARG001
-    messages: str,
-) -> tuple[list[dict[str, typing.Any]], str]:
-    """Детектирует red flags в тексте диалога.
-
-    Сначала проверяет хардкод-кэш по MD5 диалога.
-    При промахе обращается к LLM (retry with higher temperature).
-    Последний fallback — regex-правила.
-
-    Возвращает (flags, source) где source — "hardcoded", "llm" или "rules".
-    flags — список словарей вида {"category": str, ...}.
-    """
-    hardcoded = get_hardcoded_flags(messages)
-    if hardcoded is not None:
-        return _build_normalized_flags(
-            hardcoded,
-            apply_confidence_threshold=False,
-            flag_source="hardcoded",
-        ), "hardcoded"
-
-    # --- LLM temporarily disabled ---
-    # system_prompt = build_system_prompt(load_categories())
-    # user_prompt = build_user_prompt(messages)
-    #
-    # for one_attempt_index in range(_MAX_LLM_ATTEMPTS):
-    #     temperature = 0.0 if one_attempt_index == 0 else _RETRY_TEMPERATURE
-    #     raw_response = llm_client.request_completion(
-    #         system_prompt,
-    #         user_prompt,
-    #         json_mode=True,
-    #         temperature=temperature,
-    #     )
-    #     if raw_response is None:
-    #         continue
-    #
-    #     parsed_response = _parse_llm_response(raw_response)
-    #     if parsed_response is not None:
-    #         return _build_normalized_flags(
-    #             parsed_response.get("flags", []),
-    #             apply_confidence_threshold=True,
-    #             flag_source="llm",
-    #         ), "llm"
-    #
-    #     _logger.warning(
-    #         "Failed to parse LLM response attempt=%d raw_response=%.500s",
-    #         one_attempt_index + 1,
-    #         raw_response,
-    #     )
-
-    fallback_flags = _get_fallback_rule_flags(messages)
-    if fallback_flags:
-        return _build_normalized_flags(
-            fallback_flags,
-            apply_confidence_threshold=False,
-            flag_source="rules",
-        ), "rules"
-
-    return [], "rules"
+    return _build_normalized_flags(parsed_flags, flag_source="llm"), "llm"
 
 
 def load_llm() -> LLMClient:
