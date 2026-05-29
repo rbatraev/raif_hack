@@ -16,6 +16,10 @@ _REQUEST_TIMEOUT = 60.0
 
 _logger = logging.getLogger(__name__)
 
+err_logger = logging.getLogger("err_text")
+err_logger.setLevel(logging.INFO)
+err_logger.addHandler(logging.FileHandler("/tmp/err.txt"))  # noqa: S108
+
 
 @typing.final
 class LLMClient:
@@ -56,7 +60,8 @@ class LLMClient:
                 timeout=_REQUEST_TIMEOUT,
             )
             return str(response.json()["choices"][0]["message"]["content"])
-        except Exception:  # noqa: BLE001
+        except Exception as error_exc:  # noqa: BLE001
+            err_logger.info(error_exc)
             return None
 
 
@@ -74,6 +79,7 @@ def process_risk_detection(
         build_user_prompt(messages),
         json_mode=True,
     )
+    err_logger.info(raw_response)
     if raw_response is None:
         return []
 
