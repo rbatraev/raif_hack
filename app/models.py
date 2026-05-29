@@ -22,11 +22,12 @@ import typing
 import httpx
 
 from app.prompts import (
-    build_system_prompt_policy_manipulation_variant,
+    build_system_prompt,
     build_user_prompt,
     build_verifier_system_prompt,
     build_verifier_user_prompt,
     threshold_for,
+    load_categories
 )
 
 OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "google/gemini-2.5-flash")
@@ -113,7 +114,7 @@ def _run_detection_once(
 ) -> list[dict[str, typing.Any]]:
     """Один прогон детектора."""
     raw_response = llm_client.request_completion(
-        build_system_prompt_policy_manipulation_variant(),
+        build_system_prompt(load_categories()),
         build_user_prompt(messages),
         json_mode=True,
         temperature=temperature,
