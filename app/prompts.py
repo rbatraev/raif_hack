@@ -32,6 +32,7 @@ def threshold_for(category: str) -> float:
     """Возвращает порог confidence для категории (fallback — базовый CONFIDENCE_THRESHOLD)."""
     return CATEGORY_THRESHOLDS.get(category, CONFIDENCE_THRESHOLD)
 
+
 _FEW_SHOT_EXAMPLES = """
 ## ПРИМЕРЫ ДИАЛОГОВ И ПРАВИЛЬНАЯ РАЗМЕТКА
 
