@@ -1,13 +1,19 @@
-"""LLM-клиент и заглушка детектора red flags."""
+"""LLM-клиент и детектор red flags."""
 
 from __future__ import annotations
 
+import json
+import logging
 import os
 import typing
 
 import httpx
 
+from app.prompts import build_prompt, load_categories
+
 OPENROUTER_MODEL = "google/gemini-2.5-flash"
+
+_logger = logging.getLogger(__name__)
 
 
 @typing.final
@@ -42,25 +48,30 @@ class LLMClient:
             return None
 
 
-_DEMO_ANSWERS_QUEUE: list[str] = [
-    "identity_deception",
-    "identity_deception",
-    "identity_deception",
-    "identity_deception",
-    "adversarial_attack",
-]
-
-
 def process_risk_detection(
-    llm_client: LLMClient,  # noqa: ARG001
-    messages: str,  # noqa: ARG001
-) -> dict[str, typing.Any] | None:
-    """Демо-заглушка: первые 5 запросов получают фейковую категорию, дальше None."""
+    llm_client: LLMClient,
+    messages: str,
+) -> list[dict[str, typing.Any]]:
+    """Детектирует red flags в тексте диалога через LLM.
+
+    Возвращает список словарей вида {"category": str, "confidence": float, "evidence": str}.
+    При ошибке LLM или парсинга возвращает пустой список.
+    """
+    prompt_text = build_prompt(load_categories(), messages)
+
+    raw_response = llm_client.request_completion(prompt_text, json_mode=True)
+    if raw_response is None:
+        return []
+
     try:
-        category = _DEMO_ANSWERS_QUEUE.pop(0)
-    except IndexError:
-        return None
-    return {"category": category}
+        return [
+            one_flag
+            for one_flag in json.loads(raw_response).get("flags", [])
+            if isinstance(one_flag, dict) and "category" in one_flag
+        ]
+    except (json.JSONDecodeError, TypeError, AttributeError):
+        _logger.warning("Failed to parse LLM response: %.200s", raw_response)
+        return []
 
 
 def load_llm() -> LLMClient:
