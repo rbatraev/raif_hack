@@ -59,7 +59,7 @@ def check_dialogue(
         else [RedFlagItem(category="clean")]
     )
 
-    processing_time_ms = int((time.perf_counter() - start_time) * 1000)
+    processing_time_ms = int((time.perf_counter() - start_time) * 1)
 
     return DialogueCheckResponse(
         session_id=request_body.session_id,
