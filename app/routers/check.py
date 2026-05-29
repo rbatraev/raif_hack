@@ -65,6 +65,14 @@ def check_dialogue(
 
     processing_time_ms = int(time.perf_counter() - start_time)
 
+    raw_text_logger.info(
+        "session=%s flags=%s time_ms=%d",
+        request_body.session_id,
+        [one_flag.category for one_flag in predicted_red_flags],
+        processing_time_ms,
+    )
+    raw_text_logger.info("-" * 40)
+
     return DialogueCheckResponse(
         session_id=request_body.session_id,
         predicted_red_flags=predicted_red_flags,
