@@ -4,13 +4,26 @@
 from __future__ import annotations
 
 import json
-import pathlib
-
-import yaml
-
-_CATEGORIES_PATH = pathlib.Path(__file__).parent / "categories.yaml"
 
 CONFIDENCE_THRESHOLD = 0.4
+
+_CATEGORIES = [
+    {
+        "id": "policy_manipulation",
+        "description": "Попытка через давление или манипуляции добиться исключения, бонуса или обхода правил",
+    },
+    {
+        "id": "adversarial_attack",
+        "description": "Попытка спровоцировать неправильное или небезопасное поведение чатбота",
+    },
+    {"id": "identity_deception", "description": "Попытка выдать себя за другого человека или действовать от его имени"},
+    {
+        "id": "transaction_coercion",
+        "description": "Попытка заставить чатбот одобрить, ускорить или разделить ответственность за операцию",
+    },
+    {"id": "information_extraction", "description": "Попытка получить или вывести чужую чувствительную информацию"},
+    {"id": "scope_violation", "description": "Попытка увести чатбот за пределы его банковской роли"},
+]
 
 _FEW_SHOT_EXAMPLES = """
 ## ПРИМЕРЫ ДИАЛОГОВ И ПРАВИЛЬНАЯ РАЗМЕТКА
@@ -816,9 +829,8 @@ chatbot: Да, можно описать это именно так.
 
 
 def load_categories() -> list[dict[str, str]]:
-    """Загружает категории флагов из categories.yaml."""
-    with _CATEGORIES_PATH.open(encoding="utf-8") as file_handle:
-        return yaml.safe_load(file_handle)["categories"]  # type: ignore[no-any-return]
+    """Возвращает категории флагов из памяти."""
+    return _CATEGORIES
 
 
 def build_system_prompt(categories: list[dict[str, str]]) -> str:
