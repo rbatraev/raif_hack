@@ -8,6 +8,7 @@ __pycache__
 .env
 .env.*
 *.md
+!prompt_gemini.md
 docker-compose*.yml
 .dockerignore
 Dockerfile
