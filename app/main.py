@@ -13,13 +13,17 @@ app_logger = logging.getLogger("uvicorn.error")
 
 @contextlib.asynccontextmanager
 async def run_lifespan(fastapi_app: FastAPI) -> collections.abc.AsyncIterator[None]:
-    fastapi_app.state.llm_client = load_llm()
+    llm_client = load_llm()
+    await llm_client.start_client()
+    fastapi_app.state.llm_client = llm_client
 
     server_port = os.getenv("DEV_PORT", "8787")
     app_logger.info("Server: http://localhost:%s", server_port)
     app_logger.info("Docs:   http://localhost:%s/docs", server_port)
 
     yield
+
+    await llm_client.stop_client()
 
 
 application = FastAPI(

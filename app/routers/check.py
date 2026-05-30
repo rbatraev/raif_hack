@@ -46,13 +46,13 @@ class DialogueCheckResponse(BaseModel):
 
 
 @check_router.post("/check")
-def check_dialogue(
+async def check_dialogue(
     http_request: Request,
     request_body: DialogueCheckRequest,
 ) -> DialogueCheckResponse:
     start_time = time.perf_counter()
 
-    detected_flags, _source = process_risk_detection(
+    detected_flags, _source = await process_risk_detection(
         http_request.app.state.llm_client,
         format_dialogue(request_body.messages),
     )

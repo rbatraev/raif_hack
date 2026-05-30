@@ -35,27 +35,49 @@ _INFO_EXTRACTION_PATTERN = re.compile(
     re.IGNORECASE | re.DOTALL,
 )
 
+# Pre-build system prompt once at module load (categories.yaml is static)
+_CACHED_SYSTEM_PROMPT: str = build_system_prompt(load_categories())
+
 
 @typing.final
 class LLMClient:
-    """chat-completions via OpenRouter."""
+    """chat-completions via OpenRouter (async, connection-pooled)."""
 
     def __init__(self) -> None:
         self.api_key = os.getenv("OPENROUTER_API_KEY", "")
+        self._http_client: httpx.AsyncClient | None = None
 
-    def request_completion(
+    async def start_client(self) -> None:
+        """Create persistent async HTTP client with connection pooling."""
+        self._http_client = httpx.AsyncClient(
+            base_url="https://openrouter.ai",
+            headers={
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+            },
+            timeout=_REQUEST_TIMEOUT,
+            limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
+        )
+
+    async def stop_client(self) -> None:
+        """Close the HTTP client."""
+        if self._http_client:
+            await self._http_client.aclose()
+
+    async def request_completion(
         self,
         system_prompt: str,
         user_content: str,
         *,
         json_mode: bool = True,
     ) -> str | None:
-        if not self.api_key:
+        if not self.api_key or not self._http_client:
             return None
 
         request_payload: dict[str, typing.Any] = {
             "model": OPENROUTER_MODEL,
             "temperature": 0.0,
+            "max_tokens": 512,
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_content},
@@ -65,14 +87,9 @@ class LLMClient:
             request_payload["response_format"] = {"type": "json_object"}
 
         try:
-            response = httpx.post(
-                "https://openrouter.ai/api/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json",
-                },
+            response = await self._http_client.post(
+                "/api/v1/chat/completions",
                 json=request_payload,
-                timeout=_REQUEST_TIMEOUT,
             )
             return str(response.json()["choices"][0]["message"]["content"])
         except Exception:  # noqa: BLE001
@@ -113,7 +130,7 @@ def _get_fallback_rule_flags(messages: str) -> list[dict[str, typing.Any]]:
     return rule_flags
 
 
-def process_risk_detection(
+async def process_risk_detection(
     llm_client: LLMClient,
     messages: str,
 ) -> tuple[list[dict[str, typing.Any]], str]:
@@ -138,9 +155,9 @@ def process_risk_detection(
                 }
         return list(seen_categories.values()), "hardcoded"
 
-    # 2. LLM
-    raw_response = llm_client.request_completion(
-        build_system_prompt(load_categories()),
+    # 2. LLM (uses cached system prompt)
+    raw_response = await llm_client.request_completion(
+        _CACHED_SYSTEM_PROMPT,
         build_user_prompt(messages),
         json_mode=True,
     )
