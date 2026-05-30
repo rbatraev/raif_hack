@@ -33,7 +33,7 @@ WORKDIR /app
 
 COPY --from=builder --chown=app:app /app/.venv /app/.venv
 COPY --chown=app:app app ./app
-COPY --chown=app:app gemini_dialogue_eval_prompt.md ./gemini_dialogue_eval_prompt.md
+COPY --chown=app:app ./gemini_dialogue_eval_prompt.md ./gemini_dialogue_eval_prompt.md
 
 USER app
 
