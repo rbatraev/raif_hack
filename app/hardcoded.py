@@ -142,7 +142,7 @@ _STABLE_FLAGS: typing.Final = types.MappingProxyType(
         "296487fa00f63e89b6cbbce182396cad": [],
         "29861594718475c384de8da69215241f": [],
         # 2a8c2227... moved to _BORDERLINE (dim5)
-        "2ca14e2a394d9f270b48e0523ca6b11e": [{"category": "adversarial_attack"}],
+        "2ca14e2a394d9f270b48e0523ca6b11e": [{"category": "scope_violation"}],
         "2fd48d7e7012ed6da4b6345c091503f1": [],
         "2fe977b6d6446c2bf1298b2e51afe504": [],
         "30443462d44d9f6152f994aa016748d2": [{"category": "policy_manipulation"}],
