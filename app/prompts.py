@@ -863,8 +863,3 @@ def build_system_prompt() -> str:
 def build_user_prompt(dialogue: str) -> str:
     """Строит пользовательский промпт с текстом диалога."""
     return f"Диалог для анализа:\n\n{dialogue}"
-
-
-def build_prompt(dialogue: str) -> str:
-    """Строит единый промпт (для обратной совместимости)."""
-    return build_system_prompt() + "\n\n" + build_user_prompt(dialogue)
