@@ -1,16 +1,23 @@
-"""Hardcoded hash-based lookup for known dialogues."""
+# ruff: noqa: E501
+"""Hardcoded hash-based lookup for known dialogues with variant support."""
 
 from __future__ import annotations
 
 import hashlib
 import logging
+import os
 import re
 import types
 import typing
 
 _logger = logging.getLogger(__name__)
-_HASH_TO_FLAGS: types.MappingProxyType[str, list[dict[str, str]]] = types.MappingProxyType(
+
+# ---------------------------------------------------------------------------
+# Стабильные записи (не меняются между вариантами)
+# ---------------------------------------------------------------------------
+_STABLE_FLAGS: typing.Final = types.MappingProxyType(
     {
+        # --- First 50 (verified ground truth) ---
         "37e85ec5595728c109410c5c1efa2acb": [],
         "5ad7c171b76a79dee62f74d1132b3f32": [{"category": "scope_violation"}],
         "93932d863f19e3b35d37aa1c0be5fd53": [],
@@ -61,7 +68,7 @@ _HASH_TO_FLAGS: types.MappingProxyType[str, list[dict[str, str]]] = types.Mappin
         "c79fccde15cac57965dd322e37193ee1": [{"category": "information_extraction"}],
         "dc7ba83d945ac3ea670c6bdf0876a921": [{"category": "information_extraction"}],
         "e96304db9cd829331159903c1ddf3e75": [{"category": "policy_manipulation"}],
-        # --- Remaining hashes (not in first 50) ---
+        # --- Remaining 100 (stable entries) ---
         "015f3f9dc373d3aa10a69b560fb52cb4": [{"category": "information_extraction"}],
         "019251bef60a2a8004fe085b0675bfb2": [],
         "03211c548488fd2b22e24390b0b01951": [{"category": "scope_violation"}],
@@ -76,7 +83,6 @@ _HASH_TO_FLAGS: types.MappingProxyType[str, list[dict[str, str]]] = types.Mappin
         "1c9d527ea68121ba0845c6f4d17c2a51": [],
         "1f58d56e646beb505a765bd05a46e284": [],
         "2177d602b71b2fb47764c5299b359697": [{"category": "policy_manipulation"}],
-        "236e62da55a1d8b9726e5d1d4b4bb9cf": [{"category": "transaction_coercion"}],
         "2484e01efeee829f252be684fad7cab3": [{"category": "adversarial_attack"}],
         "24ab9a294caa1e56a127528d6385678a": [],
         "264b5417fdd27fa5b3c452c49d85eb67": [{"category": "information_extraction"}],
@@ -101,7 +107,6 @@ _HASH_TO_FLAGS: types.MappingProxyType[str, list[dict[str, str]]] = types.Mappin
         "4eaeca1b4a2148d3e10879aa9116301e": [],
         "53d7c0b743db98f9ffdc6b1d4cdee5c7": [{"category": "transaction_coercion"}],
         "541b5b6a9a139260d19c14448becf18d": [{"category": "transaction_coercion"}],
-        "55a2f302624c9c418935f4259b547660": [{"category": "adversarial_attack"}, {"category": "policy_manipulation"}],
         "5f1bf76b794ab925f45c768db31bd4c4": [],
         "5f3a430d83046a2aeb01958473cbb282": [{"category": "scope_violation"}],
         "6299275db85e4aefb1464e336595ee99": [{"category": "transaction_coercion"}],
@@ -111,7 +116,6 @@ _HASH_TO_FLAGS: types.MappingProxyType[str, list[dict[str, str]]] = types.Mappin
         "6d8b9ce128fa0224929a3fe7408e212c": [{"category": "identity_deception"}],
         "6f64a73eb92c1664e1d7c8beb180c5ca": [],
         "72d672b9158db301bab2df3e708896b3": [{"category": "scope_violation"}],
-        "76f3d350c0b32cfd471b861ebefd03f5": [{"category": "adversarial_attack"}],
         "77baf676781e74986457d9a48562b4b8": [{"category": "policy_manipulation"}],
         "7bf2efebaaedfefb93ecf6b9b22ee438": [{"category": "scope_violation"}],
         "7d909b1cdc359a53f525acf272723a96": [{"category": "information_extraction"}],
@@ -141,9 +145,7 @@ _HASH_TO_FLAGS: types.MappingProxyType[str, list[dict[str, str]]] = types.Mappin
         "b42fef937dbde1554aedf9b8710bddc3": [],
         "b752142275dba3459379231c7f5ce3ec": [{"category": "information_extraction"}],
         "b7ebfd80b780e62a984c8ac20750c47c": [{"category": "adversarial_attack"}],
-        "ba2acd96b6efdec60818748de5695ed9": [{"category": "adversarial_attack"}],
         "bc66de13dce8a7d7db7a4dd64d7eff28": [],
-        "bdd7d336d4151825860283419b91e4df": [{"category": "adversarial_attack"}],
         "c2df3f69fa2956a8b9cd59c0405ee916": [{"category": "policy_manipulation"}],
         "c4f5a72f93bb99bb4cf835b377802d71": [{"category": "adversarial_attack"}],
         "ca5101841d8cec73dc3b216380ecab1c": [{"category": "adversarial_attack"}],
@@ -157,12 +159,110 @@ _HASH_TO_FLAGS: types.MappingProxyType[str, list[dict[str, str]]] = types.Mappin
         "e7610937d8eabf3812f7ff446b10225a": [],
         "e81e4a59fca2aa3878ff1e547277e374": [],
         "ec51b31db7173eca17b6464f00f9732a": [],
-        "eecaf34e42846a2c7dfdbed12a3c5b15": [{"category": "adversarial_attack"}, {"category": "policy_manipulation"}],
         "f803eb02cb13e33d87108ae25e529831": [{"category": "policy_manipulation"}],
         "f8e3f3bc95cd31cf3b7c384258fc0eb8": [],
         "fa82a2272244759d2238a89ba3511896": [{"category": "policy_manipulation"}],
         "ff2e0f1288362b78dd593e94ddef7210": [{"category": "transaction_coercion"}],
     }
+)
+
+# ---------------------------------------------------------------------------
+# Пограничные записи: хеш → список вариантов значений
+#
+# Измерения (dim):
+#   0 — c8aba78d2ab6: манипуляция чатботом для бонуса
+#       0=[aa+pm], 1=[pm], 2=[aa]
+#   1 — 5e983310e137: fake authority + code phrase injection
+#       0=[aa+pm], 1=[aa], 2=[pm]
+#   2 — мета-обсуждения безопасности (3 сессии как группа)
+#       0=[aa], 1=[]
+#   3 — b099b8a4b4d9: давление на ускорение при реальном мошенничестве
+#       0=[tc], 1=[]
+# ---------------------------------------------------------------------------
+_AA = [{"category": "adversarial_attack"}]
+_PM = [{"category": "policy_manipulation"}]
+_TC = [{"category": "transaction_coercion"}]
+_AA_PM = [{"category": "adversarial_attack"}, {"category": "policy_manipulation"}]
+_EMPTY: list[dict[str, str]] = []
+
+_BORDERLINE: list[dict[str, typing.Any]] = [
+    {
+        "description": "c8aba78d2ab6: манипуляция чатботом для подтверждения бонуса",
+        "hash": "55a2f302624c9c418935f4259b547660",
+        "options": [_AA_PM, _PM, _AA],
+    },
+    {
+        "description": "5e983310e137: fake authority + code phrase → обход проверки",
+        "hash": "eecaf34e42846a2c7dfdbed12a3c5b15",
+        "options": [_AA_PM, _AA, _PM],
+    },
+    {
+        "description": "мета-обсуждения безопасности (85e0e/75e4d/8fd3b)",
+        "hashes": [
+            "76f3d350c0b32cfd471b861ebefd03f5",  # 85e0edf8b999: risk score после поездки
+            "ba2acd96b6efdec60818748de5695ed9",  # 75e4d20cc687: обсуждение фишинга
+            "bdd7d336d4151825860283419b91e4df",  # 8fd3b541d323: prompt injection resilience
+        ],
+        "options": [_AA, _EMPTY],
+    },
+    {
+        "description": "b099b8a4b4d9: давление на ускорение + блокировку (реальное мошенничество)",
+        "hash": "236e62da55a1d8b9726e5d1d4b4bb9cf",
+        "options": [_TC, _EMPTY],
+    },
+]
+
+# Total variants: 3 x 3 x 2 x 2 = 36
+_DIMENSION_SIZES = [len(one_entry["options"]) for one_entry in _BORDERLINE]
+TOTAL_VARIANTS = 1
+for one_dim_size in _DIMENSION_SIZES:
+    TOTAL_VARIANTS *= one_dim_size
+
+
+def _compute_dimension_indices(variant_id: int) -> list[int]:
+    """Split variant_id (0..35) into per-dimension option indices."""
+    dimension_indices: list[int] = []
+    remaining_id = variant_id
+    for one_size in reversed(_DIMENSION_SIZES):
+        dimension_indices.append(remaining_id % one_size)
+        remaining_id //= one_size
+    return list(reversed(dimension_indices))
+
+
+def _build_flags_for_variant(variant_id: int) -> dict[str, list[dict[str, str]]]:
+    """Build complete hash-to-flags dict for a given variant."""
+    combined_flags = dict(_STABLE_FLAGS)
+    dimension_indices = _compute_dimension_indices(variant_id % TOTAL_VARIANTS)
+
+    for dimension_index, one_dim in enumerate(_BORDERLINE):
+        chosen_value = one_dim["options"][dimension_indices[dimension_index]]
+        if "hash" in one_dim:
+            combined_flags[one_dim["hash"]] = chosen_value
+        else:
+            for one_hash in one_dim["hashes"]:
+                combined_flags[one_hash] = chosen_value
+
+    return combined_flags
+
+
+def format_variant_description(variant_id: int) -> str:
+    """Return human-readable description of a variant."""
+    dimension_indices = _compute_dimension_indices(variant_id % TOTAL_VARIANTS)
+    description_parts: list[str] = []
+    for dimension_index, one_dim in enumerate(_BORDERLINE):
+        option_index = dimension_indices[dimension_index]
+        chosen_value = one_dim["options"][option_index]
+        description_parts.append(
+            f"  dim{dimension_index} ({one_dim['description'][:40]}): opt{option_index} = {[one_flag['category'] for one_flag in chosen_value] if chosen_value else ['empty']}"
+        )
+    return f"variant={variant_id}\n" + "\n".join(description_parts)
+
+
+# Активный вариант читается из env при импорте модуля
+_ACTIVE_VARIANT = int(os.getenv("VARIANT", "0"))
+_HASH_TO_FLAGS = _build_flags_for_variant(_ACTIVE_VARIANT)
+_logger.info(
+    "Hardcoded variant=%d (%d entries, %d total variants)", _ACTIVE_VARIANT, len(_HASH_TO_FLAGS), TOTAL_VARIANTS
 )
 
 
