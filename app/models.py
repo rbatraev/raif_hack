@@ -194,6 +194,7 @@ def process_risk_detection(
         user_content,
     )
 
+    _logger.warning(raw_response)
     if raw_response is None:
         _logger.warning("LLM returned no response for session=%s", session_id)
         return [], "llm_error"
