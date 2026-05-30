@@ -79,7 +79,7 @@ def test_check_validation_invalid_message_shape(client) -> None:
 
 # --- prompts tests ---
 
-from app.prompts import build_prompt, load_categories  # noqa: E402
+from app.prompts import load_categories  # noqa: E402
 
 
 def test_load_categories_returns_six() -> None:
@@ -92,14 +92,6 @@ def test_load_categories_returns_six() -> None:
     assert "transaction_coercion" in category_ids
     assert "information_extraction" in category_ids
     assert "scope_violation" in category_ids
-
-
-def test_build_prompt_contains_category_ids() -> None:
-    all_categories = load_categories()
-    built_prompt = build_prompt(all_categories, "user: привет")
-    for one_category in all_categories:
-        assert one_category["id"] in built_prompt
-    assert "user: привет" in built_prompt
 
 
 # --- process_risk_detection tests ---

@@ -11,7 +11,7 @@ import typing
 import httpx
 
 from app.hardcoded import get_hardcoded_flags
-from app.prompts import CONFIDENCE_THRESHOLD, build_system_prompt, build_user_prompt, load_categories
+from app.prompts import CONFIDENCE_THRESHOLD, build_system_prompt, build_user_prompt
 
 OPENROUTER_MODEL = "google/gemini-2.5-flash"
 _REQUEST_TIMEOUT = 60.0
@@ -36,7 +36,7 @@ _INFO_EXTRACTION_PATTERN = re.compile(
 )
 
 # Pre-build system prompt once at module load (categories.yaml is static)
-_CACHED_SYSTEM_PROMPT: str = build_system_prompt(load_categories())
+_CACHED_SYSTEM_PROMPT: str = build_system_prompt()
 
 
 @typing.final

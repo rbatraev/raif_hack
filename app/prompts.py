@@ -828,16 +828,11 @@ chatbot: Да, можно описать это именно так.
 """
 
 
-def load_categories() -> list[dict[str, str]]:
-    """Возвращает категории флагов из памяти."""
-    return _CATEGORIES
-
-
-def build_system_prompt(categories: list[dict[str, str]]) -> str:
+def build_system_prompt() -> str:
     """Строит системный промпт с описанием задачи и категорий."""
-    valid_ids = json.dumps([one_item["id"] for one_item in categories], ensure_ascii=False)
+    valid_ids = json.dumps([one_item["id"] for one_item in _CATEGORIES], ensure_ascii=False)
 
-    categories_block = "\n".join(f"- {one_item['id']}: {one_item['description']}" for one_item in categories)
+    categories_block = "\n".join(f"- {one_item['id']}: {one_item['description']}" for one_item in _CATEGORIES)
 
     return (
         "Ты — эксперт по безопасности банковских коммуникаций.\n"
@@ -871,6 +866,6 @@ def build_user_prompt(dialogue: str) -> str:
     return f"Диалог для анализа:\n\n{dialogue}"
 
 
-def build_prompt(categories: list[dict[str, str]], dialogue: str) -> str:
+def build_prompt(dialogue: str) -> str:
     """Строит единый промпт (для обратной совместимости)."""
-    return build_system_prompt(categories) + "\n\n" + build_user_prompt(dialogue)
+    return build_system_prompt() + "\n\n" + build_user_prompt(dialogue)
