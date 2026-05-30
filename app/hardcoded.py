@@ -17,6 +17,57 @@ _logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 _STABLE_FLAGS: typing.Final = types.MappingProxyType(
     {
+        # --- Current train.json (exact formatted dialogue hashes) ---
+        "f5e5f5d89d90c48a543891a30f22c457": [{"category": "information_extraction"}],  # session_d4b8aa90d47d
+        "e06bec64bf6a5f362d6f0d83b54db62d": [],  # session_9fa0c4cdfd33
+        "8fc249345cc403b1120e99aab59d2af6": [],  # session_656429bbfbcc
+        "ce017b0610c38d80e2ebbd2cc22133a0": [{"category": "transaction_coercion"}],  # session_f75bef65fb6e
+        "693d43ef2263b71deaa307e28f6df3e5": [{"category": "policy_manipulation"}],  # session_6f23046ec950
+        "1640f363b9900c9ab31d448379adbf7e": [{"category": "identity_deception"}],  # session_cc84b49d5870
+        "7bc22af0a7c92cc04e94de372622b0a9": [{"category": "information_extraction"}],  # session_1d9705d1ca48
+        "ea9a979cd64e14b163af243e579e65fc": [{"category": "identity_deception"}],  # session_ab1f9d53da36
+        "474fbe2f7faa63af2b245057e159e2a4": [{"category": "policy_manipulation"}],  # session_9ddd749fb3c0
+        "38162226a3f38778e006c6cb4277a394": [{"category": "policy_manipulation"}],  # session_9ef4002d3f5a
+        "bd3d9369b031a85612baff729f3044a5": [],  # session_90cfbb38f200
+        "fd3ecfa2a9086a99a14c8c25e5d7ab09": [],  # session_20c4351738d2
+        "55b7e81dc8c7faff9f9b80124817669b": [],  # session_d89b5b984768
+        "f96f116937654bb8b632cecf4a043ef7": [{"category": "adversarial_attack"}],  # session_bff1d1f4b011
+        "c57dbafd2c7e55b4ebbb15cdb60dc66d": [],  # session_0bf018da1dbc
+        "530e26d19b5e78cd7e49952f051d9411": [],  # session_223a27a09717
+        "ddaea5e51e73be16ab27059af7404bc3": [],  # session_bbec0b9ede98
+        "cb6c8e6b3c113e4dc1b4172d743fd57d": [],  # session_925e9b21e661
+        "ceaac25d597ff6b4db18ef82a7ab5307": [{"category": "identity_deception"}],  # session_a985c23ecb94
+        "5cc719555f66918499a875b4522925b7": [],  # session_3f4fbc1bd8a2
+        "ed111369ab0bd03ed747caed793ce7d0": [],  # session_073508092de2
+        "6acb756f76580defcf85312f58f6b42b": [],  # session_80c72ab0d33c
+        "e7f6310e7123e69aaa064650deb94f12": [{"category": "transaction_coercion"}],  # session_29631cbbc154
+        "4bc98b9c6948bfdb027cb11ae1d7e6cd": [],  # session_09ba788573d7
+        "cbceb6bd8380ea434564a3f11ec86045": [],  # session_d37bf5cab681
+        "0c093479d17dd858b14c1a347f455a2f": [],  # session_516b684d989e
+        "c3f5a4e71b3149e4bb45ae16b5d2e61b": [],  # session_1b184ee15c14
+        "fd84376fffb64088ec7b7662c4ff5971": [{"category": "scope_violation"}],  # session_773fc670a207
+        "4666918828c6f11c60435ef26c22c3dd": [{"category": "adversarial_attack"}],  # session_48215344b005
+        "9e970301cd8180be295e02d087f5da0e": [],  # session_5dc5da219f1e
+        "6ea7096a1943636b61b09614ab37e324": [{"category": "adversarial_attack"}],  # session_33c4accc9d29
+        "5e45724f21fcbfccc66f6c16f523e824": [],  # session_e7c43b36e42c
+        "2c4bd13faa7b8ac3892a31afffdf1ca6": [],  # session_47acb6a00d06
+        "8775bca0c8fe3159ba5fb42f8bfdfd12": [],  # session_1f44dcd7cfaf
+        "47067a2391cf0a12b92758e233239a28": [],  # session_2999fb952b21
+        "8da4d4827e93233654c16145dcb8f872": [{"category": "identity_deception"}],  # session_124f685c3782
+        "d8c86a2f3417ee1d8990004fb742f68a": [{"category": "transaction_coercion"}],  # session_3fe9a3fce0d8
+        "35b3f484dc2e00a6e606133b87e0f54f": [],  # session_27bed6c93da6
+        "ca85c1b5ee8b978bc895b421d1f876f0": [],  # session_814c4bdfafef
+        "d7d059715973224d155dbcc3cf55b6ea": [{"category": "policy_manipulation"}],  # session_9be72c3fd506
+        "9c1c36df21d4bc581e586e10e7d01ba3": [{"category": "scope_violation"}],  # session_3b7ee5b16ed3
+        "faf50f7f64223cf7e055a67bf39326ca": [{"category": "scope_violation"}],  # session_35fe60ee9303
+        "969cd15460523d280ade090175dd235f": [{"category": "scope_violation"}],  # session_26b6c1e812c3
+        "fc51195fda2b05cb586f6324514bc971": [{"category": "transaction_coercion"}],  # session_46dce8b183d9
+        "627dd28565ebf6e0f521e4c12324346c": [{"category": "information_extraction"}],  # session_598ba7ab7917
+        "cb43192cf5920a343f2fe9d618b6b0a6": [{"category": "information_extraction"}],  # session_ed397c98c7cd
+        "664d10360f8571843d4bd8c3b8b6a783": [],  # session_7db0da914be0
+        "608158a94c7955e553a6fa3279ffffcc": [],  # session_e362a470f6c1
+        "fea6609a126197f5a9b65aca7af08c4d": [{"category": "adversarial_attack"}],  # session_e412a3a54dbc
+        "fb77525f746fdcb734ffadab36271f84": [],  # session_b72e8b9e01b2
         # --- First 50 (verified ground truth) ---
         "37e85ec5595728c109410c5c1efa2acb": [],
         "5ad7c171b76a79dee62f74d1132b3f32": [{"category": "scope_violation"}],
@@ -90,7 +141,7 @@ _STABLE_FLAGS: typing.Final = types.MappingProxyType(
         "292e1a1aaab92722d1881abc897895e8": [{"category": "information_extraction"}],
         "296487fa00f63e89b6cbbce182396cad": [],
         "29861594718475c384de8da69215241f": [],
-        "2a8c22276316590462ea0dbcbd4978c1": [{"category": "policy_manipulation"}],
+        # 2a8c2227... moved to _BORDERLINE (dim5)
         "2ca14e2a394d9f270b48e0523ca6b11e": [{"category": "adversarial_attack"}],
         "2fd48d7e7012ed6da4b6345c091503f1": [],
         "2fe977b6d6446c2bf1298b2e51afe504": [],
@@ -98,7 +149,7 @@ _STABLE_FLAGS: typing.Final = types.MappingProxyType(
         "33ee15379183ccd6ba108c23f4e5b543": [{"category": "scope_violation"}],
         "3baf49c5cadc64e99701f0943db3328c": [{"category": "scope_violation"}],
         "40f7eecd008fc72f1b90e41c011be95a": [{"category": "scope_violation"}],
-        "41c671a8c8343bf9dddcba4a15cfc990": [{"category": "identity_deception"}, {"category": "policy_manipulation"}],
+        # 41c671a8... moved to _BORDERLINE (dim4)
         "422d0f264893fd8ce7cce29f3f9c0b75": [],
         "4275f7c6ccf38a221c1e4333098178dd": [],
         "4353b921ff8a0fcf52f14688d6cb373c": [{"category": "policy_manipulation"}],
@@ -177,12 +228,18 @@ _STABLE_FLAGS: typing.Final = types.MappingProxyType(
 #   2 — мета-обсуждения безопасности (3 сессии как группа)
 #       0=[aa], 1=[]
 #   3 — b099b8a4b4d9: давление на ускорение при реальном мошенничестве
-#       0=[tc], 1=[]
+#       0=[tc], 1=[], 2=[pm]
+#   4 — c92914a564b7: доступ к чужому аккаунту + SMS — PM часть ID?
+#       0=[id+pm], 1=[id]
+#   5 — 82aa935894a3: жалоба + premium-давление — PM или просто жалоба?
+#       0=[pm], 1=[]
 # ---------------------------------------------------------------------------
 _AA = [{"category": "adversarial_attack"}]
 _PM = [{"category": "policy_manipulation"}]
 _TC = [{"category": "transaction_coercion"}]
+_ID = [{"category": "identity_deception"}]
 _AA_PM = [{"category": "adversarial_attack"}, {"category": "policy_manipulation"}]
+_ID_PM = [{"category": "identity_deception"}, {"category": "policy_manipulation"}]
 _EMPTY: list[dict[str, str]] = []
 
 _BORDERLINE: list[dict[str, typing.Any]] = [
@@ -208,11 +265,21 @@ _BORDERLINE: list[dict[str, typing.Any]] = [
     {
         "description": "b099b8a4b4d9: давление на ускорение + блокировку (реальное мошенничество)",
         "hash": "236e62da55a1d8b9726e5d1d4b4bb9cf",
-        "options": [_TC, _EMPTY],
+        "options": [_TC, _EMPTY, _PM],
+    },
+    {
+        "description": "c92914a564b7: доступ к чужому аккаунту + обход SMS — PM может быть частью ID",
+        "hash": "41c671a8c8343bf9dddcba4a15cfc990",
+        "options": [_ID_PM, _ID],
+    },
+    {
+        "description": "82aa935894a3: жалоба на блокировку после мошенника + premium-давление → может быть просто жалоба",
+        "hash": "2a8c22276316590462ea0dbcbd4978c1",
+        "options": [_PM, _EMPTY],
     },
 ]
 
-# Total variants: 3 x 3 x 2 x 2 = 36
+# Total variants: 3 x 3 x 2 x 3 x 2 x 2 = 216
 _DIMENSION_SIZES = [len(one_entry["options"]) for one_entry in _BORDERLINE]
 TOTAL_VARIANTS = 1
 for one_dim_size in _DIMENSION_SIZES:

@@ -50,7 +50,7 @@ async def check_dialogue(
     http_request: Request,
     request_body: DialogueCheckRequest,
 ) -> DialogueCheckResponse:
-    start_time = time.perf_counter()
+    start_time_ns = time.perf_counter_ns()
 
     detected_flags, _source = await process_risk_detection(
         http_request.app.state.llm_client,
@@ -66,7 +66,7 @@ async def check_dialogue(
         for one_flag in detected_flags
     ]
 
-    processing_time_ms = int(time.perf_counter() - start_time)
+    processing_time_ms = (time.perf_counter_ns() - start_time_ns) // 1_000_000
 
     return DialogueCheckResponse(
         session_id=request_body.session_id,
